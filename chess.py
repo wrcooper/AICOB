@@ -101,9 +101,7 @@ def main():
 				fi2 = board.x_to_file(lastRelease.pos[0])
 				print(ra2, fi2)
 				newRelease = False
-				if not board.movePiece(ra1, fi1, ra2, fi2):
-					board.pieceReset(ra1, fi1)
-
+				board.pieceReleased(ra1, fi1, ra2, fi2)
 
 		for event in pygame.event.get():
 			if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
@@ -113,6 +111,7 @@ def main():
 		if keystate[K_q]:
 			print("q pressed!")
 		
+		highlight.clear(SCREEN, background)
 		all.clear(SCREEN, background)
 		
 		highlight.draw(SCREEN)

@@ -129,7 +129,13 @@ class Board():
 			return False
 		piece.rect = pygame.Rect( pygame.mouse.get_pos()[0] - (self.space_height / 2), 
 		pygame.mouse.get_pos()[1] - (self.space_height / 2), self.space_height, self.space_height)
-		self.highlight(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1])
+		self.cur_highlight = self.highlight(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1])
+
+	def pieceReleased(self, ra1, fi1, ra2, fi2):
+		if not self.movePiece(ra1, fi1, ra2 ,fi2):
+			self.pieceReset(ra1, fi1)
+		self.cur_highlight.kill()
+
 
 	def highlight(self, x, y):
 		print(x, y)
@@ -200,6 +206,8 @@ class Highlight(pygame.sprite.Sprite):
 		s.set_alpha(100)
 		s.fill((255, 180, 60))
 		self.image = s
+
+        
 
 
 class Piece(pygame.sprite.Sprite):
