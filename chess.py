@@ -51,7 +51,7 @@ def main():
 	# initialize game groups
 	pieces = pygame.sprite.Group()
 	highlight = pygame.sprite.GroupSingle()
-	all = pygame.sprite.RenderUpdates()
+	all = pygame.sprite.LayeredUpdates()
 
 	# assing groups to sprite classes
 	Piece.containers = pieces, all
@@ -77,6 +77,7 @@ def main():
 
 	newClick = False
 	newRelease = False
+	turn = Turn(player_color)
 
 	while(True):
 		for mouseClicked in pygame.event.get(MOUSEBUTTONDOWN):
@@ -89,17 +90,12 @@ def main():
 		if newClick:
 			ra1 = board.y_to_rank(lastClick.pos[1])
 			fi1 = board.x_to_file(lastClick.pos[0])
-			board.pieceHeld(ra1, fi1)
-			print(all.sprites())
+			board.pieceHeld(ra1, fi1, all)
 			
 			if newRelease:
-				print("Clicked: ")
-				print(ra1, fi1)
 				newClick = False
-				print("Released: ")
 				ra2 = board.y_to_rank(lastRelease.pos[1])
 				fi2 = board.x_to_file(lastRelease.pos[0])
-				print(ra2, fi2)
 				newRelease = False
 				board.pieceReleased(ra1, fi1, ra2, fi2)
 
@@ -107,9 +103,6 @@ def main():
 			if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
 					return
 		keystate = pygame.key.get_pressed()
-
-		if keystate[K_q]:
-			print("q pressed!")
 		
 		highlight.clear(SCREEN, background)
 		all.clear(SCREEN, background)

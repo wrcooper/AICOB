@@ -1,4 +1,4 @@
-import pygame, math
+import pygame, math, inspect
 from chess import *
 
 player_color = "wh"
@@ -119,14 +119,21 @@ class Board():
 		if self.player == piece.color:
 			return True
 		else: return False
+	
+	def checkColor(self, piece1, piece2):
+			if piece1.color != piece2.color:
+					return True
+			else:
+					return False
 
 	def validMove(self, ra, fi, piece):
 		return piece.validMove(self, ra, fi)
 
-	def pieceHeld(self, ra, fi):
+	def pieceHeld(self, ra, fi, group):
 		piece = self.board[ra][fi]
 		if piece == 0:
 			return False
+		group.move_to_front(piece)
 		piece.rect = pygame.Rect( pygame.mouse.get_pos()[0] - (self.space_height / 2), 
 		pygame.mouse.get_pos()[1] - (self.space_height / 2), self.space_height, self.space_height)
 		self.cur_highlight = self.highlight(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1])
@@ -152,14 +159,14 @@ class Board():
 			return False
 		piece.rect = pygame.Rect(self.file_to_x(fi), self.rank_to_y(ra), self.space_height, self.space_height)
 	
-	def movePiece(self, ra1, fi1, ra, fi):
+	def movePiece(self, ra1, fi1, ra, fi, turn):
 		piece = self.board[ra1][fi1]
 		if piece == 0:
 			return False
-		print("right player? " + str(self.checkPlayer(piece)) + " valid move? " + str(self.validMove(ra, fi, piece)))
 		if self.hasPiece(ra, fi):
 			self.takePiece(ra1, fi1, ra, fi)
-		elif self.checkPlayer(piece) and self.validMove(ra, fi, piece):
+		elif self.validMove(ra, fi, piece):
+			print("Moving Piece " + str(self.board[ra1][fi1]))
 			piece.rect = pygame.Rect(self.file_to_x(fi), self.rank_to_y(ra), self.space_height, self.space_height)
 			self.board[piece.ra][piece.fi] = 0
 			piece.ra = ra
@@ -172,9 +179,10 @@ class Board():
 	
 	def takePiece(self, ra1, fi1, ra, fi):
 		piece = self.board[ra1][fi1]
-		if self.checkPlayer(piece) and piece.validTake(self, ra, fi):
-			deadPiece = self.board[ra][fi]
-			deadPiece.kill()
+		piece2 = self.board[ra][fi]
+		if self.checkColor(piece, piece2) and piece.validTake(self, ra, fi):
+			piece2 = self.board[ra][fi]
+			piece2.kill()
 			piece.rect = pygame.Rect(self.file_to_x(fi), self.rank_to_y(ra), self.space_height, self.space_height)
 			piece.ra = ra
 			piece.fi = fi
@@ -225,6 +233,7 @@ class Piece(pygame.sprite.Sprite):
 
 	def makePawn(ra, fi, x, y, height, color):
 		pawn = Pawn(ra, fi, x, y, height, color)
+		pawn.en_passant_able = False
 		pawn.image = Piece.loadImage(colorKey(color, 0), height)
 		return pawn
 	
@@ -282,6 +291,13 @@ class Pawn(Piece):
 		elif not self.hasMoved:
 			if ra == (self.ra + (self.direction() * 2)) and fi == self.fi:
 				if not board.hasPiece(self.ra + (self.direction()), self.fi):
+					self.en_passant_able = True
+					return True
+		elif ra == (self.ra + (self.direction() * 1)) and abs(fi - self.fi) == 1:
+				other_piece = board.board[self.ra][fi]
+				if isinstance(other_piece,Pawn) and other_piece.en_passant_able:
+					other_piece.kill()
+					board.board[self.ra][fi] = 0
 					return True
 		else:
 			return False
@@ -363,8 +379,27 @@ class King(Piece):
 	def moveRule(self, board, ra, fi):
 		if abs(ra - self.ra) < 2 and abs(fi - self.fi) < 2:
 			return True
+
+		elif not self.hasMoved: # checking for a castling move
+
+			if abs(fi - self.fi) == 2:
+					if fi < self.fi and board.board[ra][1] != 0 and not board.board[ra][1].hasMoved:
+						for i in range(fi + 1, self.fi):
+								if board.board[ra][fi] != 0:
+										return False
+						castle = board.movePiece(ra, 1, ra, fi+1)
+						return castle
+
+					elif fi > self.fi and board.board[ra][8] != 0 and not board.board[ra][8].hasMoved:
+						for i in range(self.fi + 1, fi):
+								if board.board[ra][fi] != 0:
+										return False
+						castle = board.movePiece(ra, 8, ra, fi-1)
+						return castle
+							
 		else:
 			return False
+
 
 	def takeRule(self, board, ra, fi):
 		return self.moveRule(board, ra, fi)
