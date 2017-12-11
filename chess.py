@@ -7,7 +7,9 @@
 
 import pygame, time, os.path, math
 from board import *
+from game import *
 from pygame.locals import *
+from UI import *
 
 # game constants
 main_dir = os.path.split(os.path.abspath(__file__))[0]
@@ -28,6 +30,12 @@ def load_images(*files):
 		imgs.append(load_image(file))
 	return imgs
 
+def print_sequence(sequence):
+	for i in range(len(sequence)):
+		if i % 2 == 0:
+			print(str(int(i/2 + 1)) + ".", end=" ")
+		print(sequence[i], end=" ") 
+
 # initialize display
 
 def main():
@@ -35,14 +43,16 @@ def main():
 	pygame.display.init() 
 	SCREEN = pygame.display.set_mode([0,0], pygame.FULLSCREEN, 0)
 	screen_info = pygame.display.Info()
-	print(str(screen_info.current_w) + " " + str(screen_info.current_h))
-	screen_offset = (screen_info.current_w - screen_info.current_h)/2
+
+	screen_offset = (screen_info.current_w - screen_info.current_h)/2 # this is the distance from the edge of the board to the edge of the screen
+
 	screen_height = screen_info.current_h
 	screen_width = screen_info.current_w
 
 	# initialize images
 	images = ["wh_pawn.png", "wh_rook.png", "wh_knight.png", "wh_bishop.png", "wh_king.png", "wh_queen.png"
 	,"bl_pawn.png", "bl_rook.png", "bl_knight.png", "bl_bishop.png", "bl_king.png", "bl_queen.png"]
+
 	loaded_images = []
 	for image in images:
 		loaded_images.append(load_image(image))
@@ -51,14 +61,19 @@ def main():
 	# initialize game groups
 	pieces = pygame.sprite.Group()
 	highlight = pygame.sprite.GroupSingle()
+	highlight_current = pygame.sprite.GroupSingle()
+	ui = pygame.sprite.Group()
 	all = pygame.sprite.LayeredUpdates()
 
-	# assing groups to sprite classes
+	# assigning groups to sprite classes
 	Piece.containers = pieces, all
 	Highlight.containers = highlight
+	Highlight_Current.containers = highlight_current
+	UI.containers = ui
+	Button.containers = ui
 	
 	# decorate the game window
-	pygame.display.set_caption('Chess Bot')
+	pygame.display.set_caption('Artificially Intelligent Chess Oriented Bot')
 
 	# draw the background
 	board = Board(screen_height, screen_offset/10, player_color, SCREEN)
@@ -72,12 +87,16 @@ def main():
 	board.set_background(background)
 	pygame.display.flip()
 
-	#initialize sprites
+	# initialize UI
+	interface = UI(screen_info, load_image("wood2.jpg"))
+	interface.init_buttons()
+
+	#initialize piece sprites
 	board.init_pieces(board.player)
 
 	newClick = False
 	newRelease = False
-	turn = Turn(player_color)
+	game = Game(player_color)
 
 	while(True):
 		for mouseClicked in pygame.event.get(MOUSEBUTTONDOWN):
@@ -90,25 +109,32 @@ def main():
 		if newClick:
 			ra1 = board.y_to_rank(lastClick.pos[1])
 			fi1 = board.x_to_file(lastClick.pos[0])
-			board.pieceHeld(ra1, fi1, all)
+			board.pieceHeld(game, ra1, fi1, all)
 			
 			if newRelease:
 				newClick = False
 				ra2 = board.y_to_rank(lastRelease.pos[1])
 				fi2 = board.x_to_file(lastRelease.pos[0])
 				newRelease = False
-				board.pieceReleased(ra1, fi1, ra2, fi2)
+				board.pieceReleased(game, ra1, fi1, ra2, fi2)
 
 		for event in pygame.event.get():
 			if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+					print_sequence(game.sequence)
 					return
 		keystate = pygame.key.get_pressed()
 		
 		highlight.clear(SCREEN, background)
+		highlight_current.clear(SCREEN, background)
+		ui.clear(SCREEN, background)
 		all.clear(SCREEN, background)
 		
+		print(ui.sprites())
+		
+		highlight_current.draw(SCREEN)
 		highlight.draw(SCREEN)
 		all.draw(SCREEN)
-		pygame.display.update(board.rect)
+		ui.draw(SCREEN)
+		pygame.display.update()
 
 if __name__ == '__main__': main()
