@@ -41,6 +41,7 @@ def print_sequence(sequence):
 def main():
 	# initialize display
 	pygame.display.init() 
+	pygame.init()
 	SCREEN = pygame.display.set_mode([0,0], pygame.FULLSCREEN, 0)
 	screen_info = pygame.display.Info()
 
@@ -129,7 +130,6 @@ def main():
 		ui.clear(SCREEN, background)
 		all.clear(SCREEN, background)
 		
-		print(ui.sprites())
 		
 		highlight_current.draw(SCREEN)
 		highlight.draw(SCREEN)
