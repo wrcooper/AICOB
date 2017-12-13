@@ -87,17 +87,22 @@ def main():
 	background = SCREEN.copy()
 	board.set_background(background)
 	pygame.display.flip()
+	
+	# init game
+	game = Game(player_color)
 
 	# initialize UI
-	interface = UI(screen_info, load_image("wood2.jpg"))
-	interface.init_buttons()
+	interface = UI(screen_info, game, load_image("wood2.jpg"))
+	interface.init_game_interface()
 
 	#initialize piece sprites
 	board.init_pieces(board.player)
 
 	newClick = False
 	newRelease = False
-	game = Game(player_color)
+	piece_held = False
+	
+	
 
 	while(True):
 		for mouseClicked in pygame.event.get(MOUSEBUTTONDOWN):
@@ -108,16 +113,26 @@ def main():
 			newRelease = True
 	
 		if newClick:
-			ra1 = board.y_to_rank(lastClick.pos[1])
-			fi1 = board.x_to_file(lastClick.pos[0])
-			board.pieceHeld(game, ra1, fi1, all)
+			if board.within(lastClick):
+				ra1 = board.y_to_rank(lastClick.pos[1])
+				fi1 = board.x_to_file(lastClick.pos[0])
+				board.pieceHeld(game, ra1, fi1, all)
+				piece_held = True
 			
 			if newRelease:
 				newClick = False
-				ra2 = board.y_to_rank(lastRelease.pos[1])
-				fi2 = board.x_to_file(lastRelease.pos[0])
 				newRelease = False
-				board.pieceReleased(game, ra1, fi1, ra2, fi2)
+				
+				if piece_held and board.within(lastRelease):
+					ra2 = board.y_to_rank(lastRelease.pos[1])
+					fi2 = board.x_to_file(lastRelease.pos[0])
+					
+					board.pieceReleased(game, ra1, fi1, ra2, fi2)
+					piece_held = False
+				elif piece_held:
+					board.pieceReset(ra1, fi1)
+					
+				interface.update_interface()
 
 		for event in pygame.event.get():
 			if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):

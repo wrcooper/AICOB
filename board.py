@@ -20,7 +20,9 @@ class Board():
 		self.space_height = height/8
 		self.last_move = None
 		self.turn = 0
-
+		
+	def within(self, mouse):
+		return (mouse.pos[0] > self.edge_dist and mouse.pos[0] < self.edge_dist + self.height)
 
 	def set_background(self, background):
 		self.background = background
@@ -127,6 +129,9 @@ class Board():
 					return True
 			else:
 					return False
+					
+	def valid_space(self, ra, fi):
+		return ra > 0 and ra < 9 and fi > 0 and fi < 9
 
 	def validMove(self, ra, fi, piece):
 		return piece.validMove(self, ra, fi)
@@ -136,7 +141,10 @@ class Board():
 			return False
 		
 		piece = self.board[ra][fi]
-		if piece == 0 or piece.color != game.player or piece.color != game.current_move: 
+		#if piece == 0 or piece.color != game.player_color or piece.color != game.current_move: 
+		#	return False
+			
+		if piece == 0 or piece.color != game.current_move: 
 			return False
 
 		# update piece location to follow mouse
@@ -149,10 +157,13 @@ class Board():
 		self.current_highlight = self.highlight_current(ra, fi)
 
 	def pieceReleased(self, game, ra1, fi1, ra2, fi2):
+	
 		piece = self.board[ra1][fi1]
 		if piece == 0:
 			return False
-		if piece.color != game.player or piece.color != game.current_move:
+		#if piece.color != game.player_color or piece.color != game.current_move:
+		#	return False
+		if piece.color != game.current_move:
 			return False
 		if self.move_piece(ra1, fi1, ra2, fi2):
 			game.next_move(self)
@@ -166,6 +177,10 @@ class Board():
 		space = self.coord_to_space(x, y)
 		ra = space[0]
 		fi = space[1]
+		
+		if not self.valid_space(ra, fi):
+			return False
+		
 		highlight = Highlight(ra, fi, self)
 		return highlight
 	

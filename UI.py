@@ -1,7 +1,7 @@
 import pygame
 
 class UI(pygame.sprite.Sprite):
-	def __init__(self, screen_info, image):
+	def __init__(self, screen_info, game, image):
 		pygame.sprite.Sprite.__init__(self, self.containers)
 		
 		self.buttons = []
@@ -27,22 +27,52 @@ class UI(pygame.sprite.Sprite):
 		s.blit(image, (0,0), (0, 0, self.rect_w, self.screen_h))
 
 		self.image = s
+		
+		self.game = game
+		self.update_game_info(self.game)
 
-	
 	def clicked(self, click):
 		if (click.pos[0] > self.start_x and click.pos[0] < self.end_x and click.pos[1] > 0):	
 			for button in self.buttons:
 				button.clicked(click)
 				
-	def init_buttons(self):
-		turn_number = Turn_Number(self)
-		to_move = To_Move(self)
-		player_button = Player_Button(self)
-		player_color = Player_Color(self)
-		new_game_button = New_Game_Button(self)
-		settings = Settings(self)
-		pgn = PGN(self)
-		chat = Chat(self)
+	def update_game_info(self, game):
+		self.current_move = game.current_move
+		self.turn_number = game.turn_number
+		self.player_color = game.player_color
+		self.pgn = game.pgn
+				
+	def init_game_interface(self):
+		self.turn_number = Turn_Number(self)
+		self.to_move = To_Move(self)
+		self.player_button = Player_Button(self)
+		self.player_color = Player_Color(self)
+		self.new_game_button = New_Game_Button(self)
+		self.settings = Settings(self)
+		self.pgn = PGN(self)
+		self.chat = Chat(self)
+		
+		self.buttons = [self.turn_number, self.to_move, self.player_button, self.player_color, 
+			self.new_game_button, self.settings, self.pgn, self.chat]
+	
+	def update_interface(self):
+		for button in self.buttons:
+			button.kill()
+		self.update_game_info(self.game)
+		self.init_game_interface()
+		
+	def init_settings_interface(self):
+		print("blah")
+		
+	def init_ai_interface(self):
+		print("blee")
+		
+	def color_to_str(color):
+		if color == "wh":
+			return "White"
+		else:
+			return "Black"
+		
 
 class Button(pygame.sprite.Sprite):
 	def __init__(self, parent):
@@ -91,7 +121,7 @@ class Turn_Number(Button):
 	def __init__(self, parent):
 		Button.__init__(self, parent)
 		font = pygame.font.Font(None, 50)
-		text = "Turn Number: 0"
+		text = "Turn Number: " + str(parent.turn_number)
 		s = font.render(text, True, (0, 0, 0))
 		
 		size = font.size(text)
@@ -110,7 +140,8 @@ class To_Move(Button):
 	def __init__(self, parent):
 		Button.__init__(self, parent)
 		font = pygame.font.Font(None, 50)
-		text = "To Move: color"
+		move = UI.color_to_str(parent.current_move)
+		text = "To Move: " + move
 		s = font.render(text, True, (0, 0, 0))
 		
 		size = font.size(text)
@@ -148,7 +179,7 @@ class Player_Color(Button):
 	def __init__(self, parent):
 		Button.__init__(self, parent)
 		font = pygame.font.Font(None, 50)
-		text = "Player Color: color"
+		text = "Player Color: " + UI.color_to_str(parent.player_color)
 		s = font.render(text, True, (0, 0, 0))
 		
 		size = font.size(text)
@@ -212,14 +243,23 @@ class PGN(Button):
 	def __init__(self, parent):
 		Button.__init__(self, parent)
 		font = pygame.font.Font(None, 40)
-		text = "PGN"
-		s = font.render(text, True, (0, 0, 0))
+		text = "PGN: " + parent.pgn
 		
-		size = font.size(text)
+		words = text.split(' ')
+		line = ""
+		i = 0
 		left_border = 0
 		top_border = 0	
 		
-		self.image.blit(s, (left_border, top_border))
+		for word in words:
+			if font.size(line + word)[0] > self.width - 5:
+				s = font.render(line, True, (0, 0, 0))
+				self.image.blit(s, (left_border + 5, top_border + 5 + (i * 35) ))
+				line = ""
+				i += 1
+			line += word + " "
+		s = font.render(line, True, (0, 0, 0))
+		self.image.blit(s, (left_border + 5, top_border + 5 + (i * 35) ))
 	
 	def dimensions(self):
 		self.w_percent = 94
