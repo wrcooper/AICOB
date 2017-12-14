@@ -278,6 +278,7 @@ class Piece(pygame.sprite.Sprite):
 		self.color = color
 		self.ra = ra
 		self.fi = fi
+		self.en_passant_able = False
 	
 	def loadImage(n, height):
 		return (pygame.transform.scale(Piece.images[n], (int(height), int(height))))
@@ -321,15 +322,58 @@ class Pawn(Piece):
 		self.image = Piece.loadImage(colorKey(color, 0), height)
 
 	# returns a list of possible moves in the form of (ra, fi)
-	def validMoves():
-		moves = []
-		# if piece hasn't moved, then (ra + direction * 2, fi)
-		# (ra + direction, fi)
-		# (ra + direction, fi + 1)
-		# (ra + direction, fi - 1)
+	def gen_moves(self, board):
+		self.moves = []
+		
+		# two spaces forward if not moved
+		if not self.hasMoved:
+			self.moves.append(((self.ra + self.direction() * 2), self.fi))
+			
+		# one space forward
+		self.moves.extend(
+			((self.ra + self.direction() * 1), self.fi)
+		)
+		
 		# en passant
+		if board.board[self.ra][self.fi - 1].en_passant_able:
+			self.moves.append((self.ra + self.direction() * 1), (self.fi - 1))
+		if board.board[self.ra][self.fi + 1].en_passant_able:
+			self.moves.append((self.ra + self.direction() * 1), (self.fi + 1))
+	
+	def gen_takes(self, board):
+		self.takes = []
+		
+		# regular takes
+		self.takes.extend(
+			((self.ra + self.direction() * 1), (self.fi + 1)),
+			((self.ra + self.direction() * 1), (self.fi -1 ))
+		)
+		
 		
 	def moveRule(self, board, ra, fi):
+	
+		"""
+		self.gen_moves(board)
+		if ((ra, fi) in self.moves):
+		
+			# en passant special case
+			if ra == (self.ra + (self.direction() * 1)) and abs(fi - self.fi) == 1:
+				other_piece = board.board[self.ra][fi]
+				if isinstance(other_piece,Pawn) and other_piece.en_passant_able:
+					other_piece.kill()
+					board.board[self.ra][fi] = 0
+					board.last_move = Board.file_[self.fi] + self.take_tostr(ra, fi) +"e.p."
+					return True
+		
+			else:
+				board.last_move = space_tostr(ra,fi)
+				if (ra, fi) == ((self.ra + self.direction() * 2), self.fi):
+					self.en_passant_able = True
+				else:
+					self.en_passant_able = False
+				return True
+	
+		"""
 		if ra == (self.ra + (self.direction() * 1)) and fi == self.fi:
 			board.last_move = space_tostr(ra, fi)
 			return True
