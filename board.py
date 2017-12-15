@@ -1,6 +1,4 @@
-import pygame, math, inspect
-from chess import *
-from game import *
+import pygame, math, inspect, chess, game, pieces
 
 player_color = "wh"
 
@@ -31,7 +29,7 @@ class Board():
 	def space_to_rect(self, ra, fi):
 		y = (ra - 1) * self.space_height
 		x = (fi-1) * self.space_height + self.edge_dist
-		return Rect(x, y, self.space_height, self.space_height)
+		return pygame.Rect(x, y, self.space_height, self.space_height)
 	
 	def coord_to_space(self, x, y):
 		ra = math.ceil(y/self.space_height)
@@ -106,21 +104,21 @@ class Board():
 		x = self.file_to_x(fi)
 		y = self.rank_to_y(ra)
 		if piece == "":
-			piece = Pawn(ra, fi, x, y, self.space_height, color)
+			piece = pieces.Pawn(ra, fi, x, y, self.space_height, color)
 		elif piece == "R":
-			piece = Rook(ra, fi, x, y, self.space_height, color)
+			piece = pieces.Rook(ra, fi, x, y, self.space_height, color)
 		elif piece == "N":
-			piece = Knight(ra, fi, x, y, self.space_height, color)
+			piece = pieces.Knight(ra, fi, x, y, self.space_height, color)
 		elif piece == "B":
-			piece = Bishop(ra, fi, x, y, self.space_height, color)
+			piece = pieces.Bishop(ra, fi, x, y, self.space_height, color)
 		elif piece == "K":
-			piece = King(ra, fi, x, y, self.space_height, color)
+			piece = pieces.King(ra, fi, x, y, self.space_height, color)
 		elif piece == "Q":
-			piece = Queen(ra, fi, x, y, self.space_height, color)
+			piece = pieces.Queen(ra, fi, x, y, self.space_height, color)
 		self.board[ra][fi] = piece
 
-	def checkPlayer(self, game, piece):
-		if game.player == piece.color:
+	def checkPlayer(self, my_game, piece):
+		if my_game.player == piece.color:
 			return True
 		else: return False
 	
@@ -136,15 +134,15 @@ class Board():
 	def validMove(self, ra, fi, piece):
 		return piece.validMove(self, ra, fi)
 
-	def pieceHeld(self, game, ra, fi, group):
+	def pieceHeld(self, my_game, ra, fi, group):
 		if ra < 1 or ra > 8 or fi < 1 or fi > 8:
 			return False
 		
 		piece = self.board[ra][fi]
-		#if piece == 0 or piece.color != game.player_color or piece.color != game.current_move: 
+		#if piece == 0 or piece.color != my_game.player_color or piece.color != my_game.current_move: 
 		#	return False
 			
-		if piece == 0 or piece.color != game.current_move: 
+		if piece == 0 or piece.color != my_game.current_move: 
 			return False
 
 		# update piece location to follow mouse
@@ -156,20 +154,21 @@ class Board():
 		self.next_highlight = self.highlight(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1])
 		self.current_highlight = self.highlight_current(ra, fi)
 
-	def pieceReleased(self, game, ra1, fi1, ra2, fi2):
+	def pieceReleased(self, my_game, ra1, fi1, ra2, fi2):
 	
 		piece = self.board[ra1][fi1]
 		if piece == 0:
 			return False
-		#if piece.color != game.player_color or piece.color != game.current_move:
+		#if piece.color != my_game.player_color or piece.color != my_game.current_move:
 		#	return False
-		if piece.color != game.current_move:
+		if piece.color != my_game.current_move:
 			return False
 		if self.move_piece(ra1, fi1, ra2, fi2):
-			game.next_move(self)
+			my_game.next_move(self)
 		else:
 			self.pieceReset(ra1, fi1)
-		self.next_highlight.kill()
+		if not self.next_highlight == False:
+			self.next_highlight.kill()
 		self.current_highlight.kill()
 
 
@@ -269,329 +268,7 @@ class Highlight_Current(pygame.sprite.Sprite):
 		s.fill((255, 160, 40))
 		self.image = s
 
-class Piece(pygame.sprite.Sprite):
-	images = []
-	def __init__(self, ra, fi, x, y, height, color):
-		pygame.sprite.Sprite.__init__(self, self.containers)
-		self.rect = pygame.Rect(x, y, height, height)
-		self.hasMoved = False
-		self.color = color
-		self.ra = ra
-		self.fi = fi
-		self.en_passant_able = False
-	
-	def loadImage(n, height):
-		return (pygame.transform.scale(Piece.images[n], (int(height), int(height))))
 
-	def take_tostr(self, ra, fi):
-		return self.shorthand + "x" + space_tostr(ra, fi)
-
-	def pos_to_str(ra, fi):
-		pos = str(Board.file_[fi]) + str(ra)
-		return pos
-
-	def direction(self):
-		if self.color == player_color:
-			return -1
-		else:
-			return 1
-	
-	def possibleMove(self, ra, fi):
-		if ra > 0 and ra < 9 and (ra, fi) != (self.ra, self.fi) and fi > 0 and fi < 9:
-			return True
-		else:
-			return False
-
-	def validTake(self, board, ra, fi):
-		if self.possibleMove(ra, fi) and self.takeRule(board, ra, fi) and self.color != board.board[ra][fi].color:
-			return True
-
-	def validMove(self, board, ra, fi):
-		if self.possibleMove(ra, fi) and self.moveRule(board, ra, fi):
-			return True
-
-	
-	
-
-
-class Pawn(Piece):
-	def __init__(self, ra, fi, x, y, height, color):
-		Piece.__init__(self, ra, fi, x, y, height, color)
-		self.en_passant_able = False
-		self.shorthand = ""
-		self.image = Piece.loadImage(colorKey(color, 0), height)
-
-	# returns a list of possible moves in the form of (ra, fi)
-	def gen_moves(self, board):
-		self.moves = []
-		
-		# two spaces forward if not moved
-		if not self.hasMoved:
-			self.moves.append(((self.ra + self.direction() * 2), self.fi))
-			
-		# one space forward
-		self.moves.extend(
-			((self.ra + self.direction() * 1), self.fi)
-		)
-		
-		# en passant
-		if board.board[self.ra][self.fi - 1].en_passant_able:
-			self.moves.append((self.ra + self.direction() * 1), (self.fi - 1))
-		if board.board[self.ra][self.fi + 1].en_passant_able:
-			self.moves.append((self.ra + self.direction() * 1), (self.fi + 1))
-	
-	def gen_takes(self, board):
-		self.takes = []
-		
-		# regular takes
-		self.takes.extend(
-			((self.ra + self.direction() * 1), (self.fi + 1)),
-			((self.ra + self.direction() * 1), (self.fi -1 ))
-		)
-		
-		
-	def moveRule(self, board, ra, fi):
-	
-		"""
-		self.gen_moves(board)
-		if ((ra, fi) in self.moves):
-		
-			# en passant special case
-			if ra == (self.ra + (self.direction() * 1)) and abs(fi - self.fi) == 1:
-				other_piece = board.board[self.ra][fi]
-				if isinstance(other_piece,Pawn) and other_piece.en_passant_able:
-					other_piece.kill()
-					board.board[self.ra][fi] = 0
-					board.last_move = Board.file_[self.fi] + self.take_tostr(ra, fi) +"e.p."
-					return True
-		
-			else:
-				board.last_move = space_tostr(ra,fi)
-				if (ra, fi) == ((self.ra + self.direction() * 2), self.fi):
-					self.en_passant_able = True
-				else:
-					self.en_passant_able = False
-				return True
-	
-		"""
-		if ra == (self.ra + (self.direction() * 1)) and fi == self.fi:
-			board.last_move = space_tostr(ra, fi)
-			return True
-		elif not self.hasMoved:
-			if ra == (self.ra + (self.direction() * 2)) and fi == self.fi:
-				if not board.hasPiece(self.ra + (self.direction()), self.fi):
-					self.en_passant_able = True
-					#TODO reset en_passant_able after a turn passes
-					board.last_move = space_tostr(ra, fi)
-					return True
-		elif ra == (self.ra + (self.direction() * 1)) and abs(fi - self.fi) == 1:
-				other_piece = board.board[self.ra][fi]
-				if isinstance(other_piece,Pawn) and other_piece.en_passant_able:
-					other_piece.kill()
-					board.board[self.ra][fi] = 0
-					board.last_move = Board.file_[self.fi] + self.take_tostr(ra, fi) +"e.p."
-					return True
-		else:
-			return False
-	
-	def takeRule(self, board, ra, fi):
-		if abs(fi - self.fi) == 1 and ra - self.ra == self.direction():
-			board.last_move = Board.file_[self.fi] + self.take_tostr(ra, fi)
-			return True
-		else:
-			return False
-		
-
-class Rook(Piece):
-	def __init__(self, ra, fi, x, y, height, color):
-		Piece.__init__(self, ra, fi, x, y, height, color)
-		self.shorthand = "R"
-		self.image = Piece.loadImage(colorKey(color, 1), height)
-
-
-	def moveRule(self, board, ra, fi):
-		if ra == self.ra:
-			if fi < self.fi:
-				increment = -1
-			else:
-				increment = 1
-			for i in range(self.fi + increment, fi, increment):
-				if board.hasPiece(ra, i):
-					return False
-			board.last_move = self.shorthand + space_tostr(ra, fi)
-			return True
-
-		elif fi == self.fi:
-			if ra < self.ra:
-				increment = -1
-			else:
-				increment = 1
-			for i in range(self.ra + increment, ra, increment):
-				if board.hasPiece(i, fi):
-					return False
-			board.last_move = self.shorthand + space_tostr(ra, fi)
-			return True
-		else:
-			return False
-
-	def takeRule(self, board, ra, fi):
-		if self.moveRule(board, ra, fi):
-			board.last_move = self.take_tostr(ra, fi)
-			return True
-
-class Knight(Piece):
-	def __init__(self, ra, fi, x, y, height, color):
-		Piece.__init__(self, ra, fi, x, y, height, color)
-		self.shorthand = "N"
-		self.image = Piece.loadImage(colorKey(color, 2), height)
-
-
-	def moveRule(self, board, ra, fi):
-		if abs(fi - self.fi) == 2:
-			if abs(ra - self.ra) == 1:
-				board.last_move = self.shorthand + space_tostr(ra, fi)
-				return True
-		elif abs(ra - self.ra) == 2:
-			if abs(fi - self.fi) == 1:
-				board.last_move = self.shorthand + space_tostr(ra, fi)
-				return True
-		else:
-			return False
-	
-	def takeRule(self, board, ra, fi):
-		if self.moveRule(board, ra, fi):
-			board.last_move = self.take_tostr(ra, fi)
-			return True
-
-
-class Bishop(Piece):
-	def __init__(self, ra, fi, x, y, height, color):
-		Piece.__init__(self, ra, fi, x, y, height, color)
-		self.shorthand = "B"
-		self.image = Piece.loadImage(colorKey(color, 3), height)
-
-
-	def moveRule(self, board, ra, fi):
-		if abs(ra - self.ra) == abs(fi- self.fi):
-			if fi < self.fi:
-				inc1 = -1
-			else:
-				inc1 = 1
-			if ra < self.ra:
-				inc2 = -1
-			else:
-				inc2 = 1
-			
-			dist = abs(fi - self.fi)
-
-			for i in range(1, dist):
-				if board.hasPiece(self.ra + (inc2 * i), self.fi + (inc1 * i)):
-					return False
-			board.last_move = self.shorthand + space_tostr(ra, fi)
-			return True
-		else:
-			return False
-	
-	def takeRule(self, board, ra, fi):
-		if self.moveRule(board, ra, fi):
-			board.last_move = self.take_tostr(ra, fi)
-			return True
-
-class King(Piece):
-	def __init__(self, ra, fi, x, y, height, color):
-		Piece.__init__(self, ra, fi, x, y, height, color)
-		self.shorthand = "K"
-		self.image = Piece.loadImage(colorKey(color, 4), height)
-
-
-	def moveRule(self, board, ra, fi):
-		if abs(ra - self.ra) < 2 and abs(fi - self.fi) < 2:
-			board.last_move = self.shorthand + space_tostr(ra, fi)
-			return True
-
-		elif not self.hasMoved: # checking for a castling move
-
-			if abs(fi - self.fi) == 2:
-					if fi < self.fi and board.board[ra][1] != 0 and not board.board[ra][1].hasMoved:
-						for i in range(fi + 1, self.fi):
-								if board.board[ra][fi] != 0:
-										return False
-						castle = board.move_piece(ra, 1, ra, fi+1)
-						board.last_move = "O-O"
-						return castle
-
-					elif fi > self.fi and board.board[ra][8] != 0 and not board.board[ra][8].hasMoved:
-						for i in range(self.fi + 1, fi):
-								if board.board[ra][fi] != 0:
-										return False
-						castle = board.move_piece(ra, 8, ra, fi-1)
-						board.last_move = "O-O-O"
-						return castle
-							
-		else:
-			return False
-
-
-	def takeRule(self, board, ra, fi):
-		if self.moveRule(board, ra, fi):
-			board.last_move = self.take_tostr(ra, fi)
-			return True
-			
-
-class Queen(Piece):
-	def __init__(self, ra, fi, x, y, height, color):
-		Piece.__init__(self, ra, fi, x, y, height, color)
-		self.shorthand = "Q"
-		self.image = Piece.loadImage(colorKey(color, 5), height)
-
-
-	def moveRule(self, board, ra, fi):
-		if abs(ra - self.ra) == abs(fi- self.fi):
-			if fi < self.fi:
-				inc1 = -1
-			else:
-				inc1 = 1
-			if ra < self.ra:
-				inc2 = -1
-			else:
-				inc2 = 1
-			
-			dist = abs(fi - self.fi)
-
-			for i in range(1, dist):
-				if board.hasPiece(self.ra + (inc2 * i), self.fi + (inc1 * i)):
-					return False
-			board.last_move = self.shorthand + space_tostr(ra, fi)
-			return True
-		elif ra == self.ra:
-			if fi < self.fi:
-				increment = -1
-			else:
-				increment = 1
-			for i in range(self.fi + increment, fi, increment):
-				print("Checking board["+str(ra)+"]["+str(i)+"]")
-				if board.hasPiece(ra, i):
-					return False
-			board.last_move = self.shorthand + space_tostr(ra, fi)
-			return True
-
-		elif fi == self.fi:
-			if ra < self.ra:
-				increment = -1
-			else:
-				increment = 1
-			for i in range(self.ra + increment, ra, increment):
-				if board.hasPiece(i, fi):
-					return False
-			board.last_move = self.shorthand + space_tostr(ra, fi)
-			return True
-		else:
-			return False
-	
-	def takeRule(self, board, ra, fi):
-		if self.moveRule(board, ra, fi):
-			board.last_move = self.take_tostr(ra, fi)
-			return True
 
 
 

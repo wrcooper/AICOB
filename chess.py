@@ -1,15 +1,12 @@
 # ------------------------------------------------------
 # chess.py
-# A chess game with built in opponent AI and chatbot companion
+# A chess game with built-in opponent AI and chatbot companion
 # Winston Cooper
 # 11/5/2017
 # ------------------------------------------------------
 
-import pygame, time, os.path, math
-from board import *
-from game import *
+import pygame, time, os.path, math, board, game, UI, pieces
 from pygame.locals import *
-from UI import *
 
 # game constants
 main_dir = os.path.split(os.path.abspath(__file__))[0]
@@ -57,46 +54,47 @@ def main():
 	loaded_images = []
 	for image in images:
 		loaded_images.append(load_image(image))
-	Piece.images = loaded_images
+	pieces.Piece.images = loaded_images
 
 	# initialize game groups
-	pieces = pygame.sprite.Group()
+	piece_group = pygame.sprite.Group()
 	highlight = pygame.sprite.GroupSingle()
 	highlight_current = pygame.sprite.GroupSingle()
 	ui = pygame.sprite.Group()
 	all = pygame.sprite.LayeredUpdates()
 
 	# assigning groups to sprite classes
-	Piece.containers = pieces, all
-	Highlight.containers = highlight
-	Highlight_Current.containers = highlight_current
-	UI.containers = ui
-	Button.containers = ui
+	pieces.Piece.containers = piece_group, all
+	board.Highlight.containers = highlight
+	board.Highlight_Current.containers = highlight_current
+	UI.UI.containers = ui
+	UI.Button.containers = ui
 	
 	# decorate the game window
 	pygame.display.set_caption('Artificially Intelligent Chess Oriented Bot')
 
 	# draw the background
-	board = Board(screen_height, screen_offset/10, player_color, SCREEN)
+	my_board = board.Board(screen_height, screen_offset/10, player_color, SCREEN)
 	background = pygame.Surface((screen_height,screen_height))
 	bgwood = load_image("wood.jpg").convert()
 	bgwood.set_alpha(150)
-	board.draw(background)
+	my_board.draw(background)
 	background.blit(bgwood, (0,0))
-	SCREEN.blit(background, (board.edge_dist, 0))
+	SCREEN.blit(background, (my_board.edge_dist, 0))
 	background = SCREEN.copy()
-	board.set_background(background)
+	my_board.set_background(background)
 	pygame.display.flip()
 	
-	# init game
-	game = Game(player_color)
+	# init game and clock
+	my_clock = pygame.time.Clock()
+	my_game = game.Game(player_color)
 
 	# initialize UI
-	interface = UI(screen_info, game, load_image("wood2.jpg"))
+	interface = UI.UI(screen_info, my_game, load_image("wood2.jpg"))
 	interface.init_game_interface()
 
 	#initialize piece sprites
-	board.init_pieces(board.player)
+	my_board.init_pieces(my_board.player)
 
 	newClick = False
 	newRelease = False
@@ -105,38 +103,43 @@ def main():
 	
 
 	while(True):
+		#print("newClick = " + str(newClick) + " newRelease = " + str(newRelease))
+		
+		my_clock.tick(60)
+	
 		for mouseClicked in pygame.event.get(MOUSEBUTTONDOWN):
 			lastClick = mouseClicked
 			newClick = True
+			
 		for mouseReleased in pygame.event.get(MOUSEBUTTONUP):
 			lastRelease = mouseReleased
 			newRelease = True
 	
 		if newClick:
-			if board.within(lastClick):
-				ra1 = board.y_to_rank(lastClick.pos[1])
-				fi1 = board.x_to_file(lastClick.pos[0])
-				board.pieceHeld(game, ra1, fi1, all)
+			if my_board.within(lastClick):
+				ra1 = my_board.y_to_rank(lastClick.pos[1])
+				fi1 = my_board.x_to_file(lastClick.pos[0])
+				my_board.pieceHeld(my_game, ra1, fi1, all)
 				piece_held = True
 			
 			if newRelease:
 				newClick = False
 				newRelease = False
 				
-				if piece_held and board.within(lastRelease):
-					ra2 = board.y_to_rank(lastRelease.pos[1])
-					fi2 = board.x_to_file(lastRelease.pos[0])
+				if piece_held and my_board.within(lastRelease):
+					ra2 = my_board.y_to_rank(lastRelease.pos[1])
+					fi2 = my_board.x_to_file(lastRelease.pos[0])
 					
-					board.pieceReleased(game, ra1, fi1, ra2, fi2)
+					my_board.pieceReleased(my_game, ra1, fi1, ra2, fi2)
 					piece_held = False
 				elif piece_held:
-					board.pieceReset(ra1, fi1)
+					my_board.pieceReset(ra1, fi1)
 					
 				interface.update_interface()
 
 		for event in pygame.event.get():
 			if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
-					print_sequence(game.sequence)
+					print_sequence(my_game.sequence)
 					return
 		keystate = pygame.key.get_pressed()
 		

@@ -1,5 +1,4 @@
-import pygame
-from board import Pawn
+import pygame, board, pieces
 
 class Game():
 	def __init__(self, player_color):
@@ -9,23 +8,29 @@ class Game():
 		self.current_move = "wh"
 		self.pgn = ""
 
-	def next_move(self, board):
-		self.sequence.append(board.last_move)
+	def next_move(self, my_board):
+		self.sequence.append(my_board.last_move)
 		if self.current_move == "wh":
 			self.current_move = "bl"
-			"""
-			for piece in board.board:
-				if isinstance(piece, Pawn):	
-					if piece.color == "bl":
-						piece.en_passant_able = False"""
+			
+			for ra in range(9):
+				for fi in range(9):
+					piece = my_board.board[ra][fi]
+					if isinstance(piece, pieces.Pawn):	
+						#print(str(piece.ra) + " " + str(piece.fi) + " en passant able? " + str(piece.en_passant_able))
+						if piece.color == "bl":
+							piece.en_passant_able = False
 		else:	
 			self.next_turn()
 			self.current_move = "wh"
-			"""
-			for piece in board.board:
-				if isinstance(piece, Pawn):	
-					if piece.color == "wh":
-						piece.en_passant_able = False """
+	
+			for ra in range(9):
+				for fi in range(9):
+					piece = my_board.board[ra][fi]
+					if isinstance(piece, pieces.Pawn):	
+						#print(str(piece.ra) + " " + str(piece.fi) + " en passant able? " + str(piece.en_passant_able))
+						if piece.color == "wh":
+							piece.en_passant_able = False
 		
 			
 		self.generate_pgn()
