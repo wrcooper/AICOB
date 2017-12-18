@@ -36,10 +36,39 @@ class Piece(pygame.sprite.Sprite):
 	def validTake(self, my_board, ra, fi):
 		if self.possibleMove(ra, fi) and self.takeRule(my_board, ra, fi) and self.color != my_board.board[ra][fi].color:
 			return True
+		else:
+			print("Error: " + str(self.possibleMove(ra, fi)) + str(self.takeRule(my_board, ra, fi)) + str(self.color != my_board.board[ra][fi].color))
 
 	def validMove(self, my_board, ra, fi):
 		if self.possibleMove(ra, fi) and self.moveRule(my_board, ra, fi):
 			return True
+			
+	def move_str(self, ra, fi):
+		return self.shorthand + board.space_tostr(ra, fi)
+		
+	def can_take(self, my_board, ra, fi):
+		return(in_bounds(ra, fi) and my_board.hasPiece(ra, fi) and self.is_opp(my_board, ra, fi))
+		
+	def is_opp(self, my_board, ra, fi):
+		return self.color != my_board.get_piece_color(ra, fi)
+
+	def moveRule(self, my_board, ra, fi):
+		self.gen_moves(my_board)
+		
+		if ((ra, fi) in self.moves):
+			my_board.last_move = self.move_str(ra, fi)
+			return True
+		else:
+			return False
+			
+	def takeRule(self, my_board, ra, fi):
+		self.gen_moves(my_board)
+		
+		if ((ra,fi) in self.takes):
+			my_board.last_move = self.take_tostr(ra, fi)
+			return True
+		else:
+			return False
 
 def in_bounds(ra, fi):
 	return (ra > 0 and ra < 9 and fi > 0 and fi < 9)
@@ -57,9 +86,13 @@ class Pawn(Piece):
 		self.takes = []
 		
 		# two spaces forward if not moved
+		two_fwd = (self.ra + self.direction() * 2)
+		one_fwd = (self.ra + self.direction())
+		
 		if not self.hasMoved:
-			if in_bounds((self.ra + self.direction() * 2), self.fi): 
-				self.moves.append(((self.ra + self.direction() * 2), self.fi))
+			if in_bounds(two_fwd, self.fi): 
+				if my_board.board[one_fwd][self.fi] == 0:
+					self.moves.append((two_fwd, self.fi))
 			
 		# one space forward
 		if in_bounds((self.ra + self.direction() * 1), self.fi):
@@ -76,12 +109,11 @@ class Pawn(Piece):
 				self.moves.append(((self.ra + self.direction() * 1), (self.fi + 1)))
 				
 		# regular takes
-		if in_bounds((self.ra + self.direction() * 1), (self.fi - 1)):
+		if self.can_take(my_board, one_fwd, self.fi - 1):
 			self.takes.append(((self.ra + self.direction() * 1), (self.fi - 1 )))
-		if in_bounds((self.ra + self.direction() * 1), (self.fi + 1)):
+		if self.can_take(my_board, one_fwd, self.fi + 1):
 			self.takes.append(((self.ra + self.direction() * 1), (self.fi + 1 )))
-			
-		print(str(self.moves))
+
 		
 		
 	def moveRule(self, my_board, ra, fi):
@@ -127,14 +159,16 @@ class Pawn(Piece):
 		else:
 			return False
 		"""
-	
+			
 	def takeRule(self, my_board, ra, fi):
 		self.gen_moves(my_board)
+		
 		if ((ra,fi) in self.takes):
 			my_board.last_move = board.Board.file_[self.fi] + self.take_tostr(ra, fi)
 			return True
 		else:
-			return False
+			return False	
+
 	
 	
 		"""
@@ -156,34 +190,38 @@ class Rook(Piece):
 		self.takes = []
 	
 		for ra in range(self.ra - 1, 0, -1):
-			if my_board.hasPiece(ra, self.fi):
+			if self.can_take(my_board, ra, self.fi):
 				self.takes.append((ra, self.fi))
 				break
-			else: self.moves.append((ra, self.fi))
-		for ra in range(self.ra + 1, 9):
-			if my_board.hasPiece(ra, self.fi):
-				self.takes.append((ra, self.fi))
+			elif my_board.hasPiece(ra, self.fi):
 				break
 			else: self.moves.append((ra, self.fi))
 			
+		for ra in range(self.ra + 1, 9):
+			if self.can_take(my_board, ra, self.fi):
+				self.takes.append((ra, self.fi))
+				break
+			elif my_board.hasPiece(ra, self.fi):
+				break
+			else: self.moves.append((ra, self.fi))
+			
+			
+			
 		for fi in range(self.fi - 1, 0, -1):
-			if my_board.hasPiece(self.ra, fi):
+			if self.can_take(my_board, self.ra, fi):
 				self.takes.append((self.ra, fi))
+				break
+			elif my_board.hasPiece(self.ra, fi):
 				break
 			else: self.moves.append((self.ra, fi))
 		for fi in range(self.fi + 1, 9):
-			if my_board.hasPiece(self.ra, fi):
+			if self.can_take(my_board, self.ra, fi):
 				self.takes.append((self.ra, fi))
+				break
+			elif my_board.hasPiece(self.ra, fi):
 				break
 			else: self.moves.append((self.ra, fi))
 
-	def moveRule(self, my_board, ra, fi):
-		self.gen_moves(my_board)
-		
-		if ((ra, fi) in self.moves):
-			my_board.last_move = self.shorthand + board.space_tostr(ra,fi)
-			return True
-		else: return False
 	
 		"""
 		if ra == self.ra:
@@ -211,13 +249,6 @@ class Rook(Piece):
 			return False
 		"""
 
-	def takeRule(self, my_board, ra, fi):
-		self.gen_moves(my_board)
-		
-		if ((ra, fi) in self.takes):
-			my_board.last_move = self.take_tostr(ra, fi)
-			return True
-
 class Knight(Piece):
 	def __init__(self, ra, fi, x, y, height, color):
 		Piece.__init__(self, ra, fi, x, y, height, color)
@@ -231,63 +262,61 @@ class Knight(Piece):
 		ra = self.ra + 1
 		fi = self.fi + 2
 		if in_bounds(ra, fi):
-			if my_board.hasPiece(ra, fi):
+			if self.can_take(my_board, ra, fi):
 				self.takes.append((ra,fi))
-			else: self.moves.append((ra, fi))
+			elif not my_board.hasPiece(ra, fi): 
+				self.moves.append((ra, fi))
 			
 		ra = self.ra - 1
 		if in_bounds(ra, fi):
-			if my_board.hasPiece(ra, fi):
+			if self.can_take(my_board, ra, fi):
 				self.takes.append((ra,fi))
-			else: self.moves.append((ra, fi))
+			elif not my_board.hasPiece(ra, fi): 
+				self.moves.append((ra, fi))
 		
 		fi = self.fi - 2
 		if in_bounds(ra, fi):
-			if my_board.hasPiece(ra, fi):
+			if self.can_take(my_board, ra, fi):
 				self.takes.append((ra,fi))
-			else: self.moves.append((ra, fi))
+			elif not my_board.hasPiece(ra, fi): 
+				self.moves.append((ra, fi))
 			
 		ra = self.ra + 1
 		if in_bounds(ra, fi):
-			if my_board.hasPiece(ra, fi):
+			if self.can_take(my_board, ra, fi):
 				self.takes.append((ra,fi))
-			else: self.moves.append((ra, fi))
+			elif not my_board.hasPiece(ra, fi): 
+				self.moves.append((ra, fi))
 		
 		ra = self.ra + 2
 		fi = self.fi + 1
 		if in_bounds(ra, fi):
-			if my_board.hasPiece(ra, fi):
+			if self.can_take(my_board, ra, fi):
 				self.takes.append((ra,fi))
-			else: self.moves.append((ra, fi))
+			elif not my_board.hasPiece(ra, fi): 
+				self.moves.append((ra, fi))
 			
 		ra = self.ra - 2
 		if in_bounds(ra, fi):
-			if my_board.hasPiece(ra, fi):
+			if self.can_take(my_board, ra, fi):
 				self.takes.append((ra,fi))
-			else: self.moves.append((ra, fi))
+			elif not my_board.hasPiece(ra, fi): 
+				self.moves.append((ra, fi))
 		
 		fi = self.fi - 1
 		if in_bounds(ra, fi):
-			if my_board.hasPiece(ra, fi):
+			if self.can_take(my_board, ra, fi):
 				self.takes.append((ra,fi))
-			else: self.moves.append((ra, fi))
+			elif not my_board.hasPiece(ra, fi): 
+				self.moves.append((ra, fi))
 			
 		ra = self.ra + 2
 		if in_bounds(ra, fi):
-			if my_board.hasPiece(ra, fi):
+			if self.can_take(my_board, ra, fi):
 				self.takes.append((ra,fi))
-			else: self.moves.append((ra, fi))
+			elif not my_board.hasPiece(ra, fi): 
+				self.moves.append((ra, fi))
 		
-
-	def moveRule(self, my_board, ra, fi):
-		self.gen_moves(my_board)
-		
-		if ((ra, fi) in self.moves):
-			my_board.last_move = self.shorthand + board.space_tostr(ra,fi)
-			return True
-		else:
-			return False
-			
 	
 		
 		"""
@@ -302,16 +331,6 @@ class Knight(Piece):
 		else:
 			return False
 		"""
-	
-	def takeRule(self, my_board, ra, fi):
-		self.gen_moves(my_board)
-		
-		if ((ra, fi) in self.takes):
-			my_board.last_move = self.take_tostr(ra, fi)
-			return True
-		else:
-			return False
-		
 		
 		"""
 		if self.moveRule(my_board, ra, fi):
@@ -335,8 +354,10 @@ class Bishop(Piece):
 		
 		for i in range(1, 9):
 			if in_bounds(self.ra + i * rinc, self.fi + i * finc):
-				if my_board.hasPiece(self.ra + i * rinc, self.fi + i * finc):
+				if self.can_take(my_board, self.ra + i * rinc, self.fi + i * finc):
 					self.takes.append((self.ra + i * rinc, self.fi + i * finc))
+					break
+				elif my_board.hasPiece(self.ra + i * rinc, self.fi + i * finc):
 					break
 				else:
 					self.moves.append((self.ra + i * rinc, self.fi + i * finc))
@@ -345,8 +366,10 @@ class Bishop(Piece):
 		
 		for i in range(1, 9):
 			if in_bounds(self.ra + i * rinc, self.fi + i * finc):
-				if my_board.hasPiece(self.ra + i * rinc, self.fi + i * finc):
+				if self.can_take(my_board, self.ra + i * rinc, self.fi + i * finc):
 					self.takes.append((self.ra + i * rinc, self.fi + i * finc))
+					break
+				elif my_board.hasPiece(self.ra + i * rinc, self.fi + i * finc):
 					break
 				else:
 					self.moves.append((self.ra + i * rinc, self.fi + i * finc))
@@ -355,8 +378,10 @@ class Bishop(Piece):
 		
 		for i in range(1, 9):
 			if in_bounds(self.ra + i * rinc, self.fi + i * finc):
-				if my_board.hasPiece(self.ra + i * rinc, self.fi + i * finc):
+				if self.can_take(my_board, self.ra + i * rinc, self.fi + i * finc):
 					self.takes.append((self.ra + i * rinc, self.fi + i * finc))
+					break
+				elif my_board.hasPiece(self.ra + i * rinc, self.fi + i * finc):
 					break
 				else:
 					self.moves.append((self.ra + i * rinc, self.fi + i * finc))
@@ -365,21 +390,16 @@ class Bishop(Piece):
 		
 		for i in range(1, 9):
 			if in_bounds(self.ra + i * rinc, self.fi + i * finc):
-				if my_board.hasPiece(self.ra + i * rinc, self.fi + i * finc):
+				if self.can_take(my_board, self.ra + i * rinc, self.fi + i * finc):
 					self.takes.append((self.ra + i * rinc, self.fi + i * finc))
+					break
+				elif my_board.hasPiece(self.ra + i * rinc, self.fi + i * finc):
 					break
 				else:
 					self.moves.append((self.ra + i * rinc, self.fi + i * finc))
 					
 
-	def moveRule(self, my_board, ra, fi):
-		self.gen_moves(my_board)
-		
-		if ((ra, fi) in self.moves):
-			my_board.last_move = self.shorthand + board.space_tostr(ra, fi)
-			return True
-		else:
-			return False
+	
 	
 		"""
 		if abs(ra - self.ra) == abs(fi- self.fi):
@@ -402,14 +422,6 @@ class Bishop(Piece):
 		else:
 			return False
 		"""
-	
-	def takeRule(self, my_board, ra, fi):
-		self.gen_moves(my_board)
-		if ((ra, fi) in self.takes):
-			my_board.last_move = self.take_tostr(ra, fi)
-			return True
-		else:
-			return False
 
 class King(Piece):
 	def __init__(self, ra, fi, x, y, height, color):
@@ -428,20 +440,23 @@ class King(Piece):
 				ra = self.ra + i
 				fi = self.fi + j
 				if in_bounds(ra, fi):
-					if my_board.hasPiece(ra, fi):
+					if self.can_take(my_board, ra, fi):
 						self.takes.append((ra, fi))
-					else:
+					elif not my_board.hasPiece(ra, fi):
 						self.moves.append((ra, fi))
+		castle = True
 		
 		if not self.hasMoved and my_board.board[self.ra][1] != 0 and not my_board.board[self.ra][1].hasMoved:
 			for i in range(2, self.fi):
-				if my_board.board[self.ra][i] != 0: break
-			self.moves.append((self.ra, self.fi - 2))
+				if my_board.board[self.ra][i] != 0: castle = False
+			if castle: self.moves.append((self.ra, self.fi - 2))
+			
+		castle = True
 		
 		if not self.hasMoved and my_board.board[self.ra][8] != 0 and not my_board.board[self.ra][8].hasMoved:
-			for i in range(self.fi, 8):
-				if my_board.board[self.ra][i] != 0: break
-			self.moves.append((self.ra, self.fi + 2))
+			for i in range(self.fi + 1, 8):
+				if my_board.board[self.ra][i] != 0: castle = False
+			if castle: self.moves.append((self.ra, self.fi + 2))
 			
 
 
@@ -495,13 +510,7 @@ class King(Piece):
 			return False
 		"""
 
-	def takeRule(self, my_board, ra, fi):
-		if ((ra, fi) in self.takes):
-			my_board.last_move = self.take_tostr(ra,fi)
-			return True
-		else:
-			return False
-	
+
 		"""
 		if self.moveRule(my_board, ra, fi):
 			my_board.last_move = self.take_tostr(ra, fi)
@@ -514,7 +523,7 @@ class Queen(Piece):
 		self.shorthand = "Q"
 		self.image = Piece.loadImage(board.colorKey(color, 5), height)
 
-	def gen_moves(my_board):
+	def gen_moves(self, my_board):
 		self.moves = []
 		self.takes = []
 		
@@ -523,8 +532,10 @@ class Queen(Piece):
 		
 		for i in range(1, 9):
 			if in_bounds(self.ra + i * rinc, self.fi + i * finc):
-				if my_board.hasPiece(self.ra + i * rinc, self.fi + i * finc):
+				if self.can_take(my_board, self.ra + i * rinc, self.fi + i * finc):
 					self.takes.append((self.ra + i * rinc, self.fi + i * finc))
+					break
+				elif my_board.hasPiece(self.ra + i * rinc, self.fi + i * finc):
 					break
 				else:
 					self.moves.append((self.ra + i * rinc, self.fi + i * finc))
@@ -533,8 +544,10 @@ class Queen(Piece):
 		
 		for i in range(1, 9):
 			if in_bounds(self.ra + i * rinc, self.fi + i * finc):
-				if my_board.hasPiece(self.ra + i * rinc, self.fi + i * finc):
+				if self.can_take(my_board, self.ra + i * rinc, self.fi + i * finc):
 					self.takes.append((self.ra + i * rinc, self.fi + i * finc))
+					break
+				elif my_board.hasPiece(self.ra + i * rinc, self.fi + i * finc):
 					break
 				else:
 					self.moves.append((self.ra + i * rinc, self.fi + i * finc))
@@ -543,8 +556,10 @@ class Queen(Piece):
 		
 		for i in range(1, 9):
 			if in_bounds(self.ra + i * rinc, self.fi + i * finc):
-				if my_board.hasPiece(self.ra + i * rinc, self.fi + i * finc):
+				if self.can_take(my_board, self.ra + i * rinc, self.fi + i * finc):
 					self.takes.append((self.ra + i * rinc, self.fi + i * finc))
+					break
+				elif my_board.hasPiece(self.ra + i * rinc, self.fi + i * finc):
 					break
 				else:
 					self.moves.append((self.ra + i * rinc, self.fi + i * finc))
@@ -553,37 +568,51 @@ class Queen(Piece):
 		
 		for i in range(1, 9):
 			if in_bounds(self.ra + i * rinc, self.fi + i * finc):
-				if my_board.hasPiece(self.ra + i * rinc, self.fi + i * finc):
+				if self.can_take(my_board, self.ra + i * rinc, self.fi + i * finc):
 					self.takes.append((self.ra + i * rinc, self.fi + i * finc))
+					break
+				elif my_board.hasPiece(self.ra + i * rinc, self.fi + i * finc):
 					break
 				else:
 					self.moves.append((self.ra + i * rinc, self.fi + i * finc))
 					
+
 					
 		for ra in range(self.ra - 1, 0, -1):
-			if my_board.hasPiece(ra, self.fi):
+			if self.can_take(my_board, ra, self.fi):
 				self.takes.append((ra, self.fi))
 				break
-			else: self.moves.append((ra, self.fi))
-		for ra in range(self.ra + 1, 9):
-			if my_board.hasPiece(ra, self.fi):
-				self.takes.append((ra, self.fi))
+			elif my_board.hasPiece(ra, self.fi):
 				break
 			else: self.moves.append((ra, self.fi))
 			
+		for ra in range(self.ra + 1, 9):
+			if self.can_take(my_board, ra, self.fi):
+				self.takes.append((ra, self.fi))
+				break
+			elif my_board.hasPiece(ra, self.fi):
+				break
+			else: self.moves.append((ra, self.fi))
+			
+			
+			
 		for fi in range(self.fi - 1, 0, -1):
-			if my_board.hasPiece(self.ra, fi):
+			if self.can_take(my_board, self.ra, fi):
 				self.takes.append((self.ra, fi))
+				break
+			elif my_board.hasPiece(self.ra, fi):
 				break
 			else: self.moves.append((self.ra, fi))
 		for fi in range(self.fi + 1, 9):
-			if my_board.hasPiece(self.ra, fi):
+			if self.can_take(my_board, self.ra, fi):
 				self.takes.append((self.ra, fi))
+				break
+			elif my_board.hasPiece(self.ra, fi):
 				break
 			else: self.moves.append((self.ra, fi))
 		
 
-	def moveRule(self, my_board, ra, fi):
+	"""
 		if abs(ra - self.ra) == abs(fi- self.fi):
 			if fi < self.fi:
 				inc1 = -1
@@ -625,8 +654,4 @@ class Queen(Piece):
 			return True
 		else:
 			return False
-	
-	def takeRule(self, my_board, ra, fi):
-		if self.moveRule(my_board, ra, fi):
-			my_board.last_move = self.take_tostr(ra, fi)
-			return True
+"""

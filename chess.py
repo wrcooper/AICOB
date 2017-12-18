@@ -5,7 +5,7 @@
 # 11/5/2017
 # ------------------------------------------------------
 
-import pygame, time, os.path, math, board, game, UI, pieces
+import pygame, time, os.path, math, board, game, UI, pieces, intelligence as intel
 from pygame.locals import *
 
 # game constants
@@ -76,8 +76,9 @@ def main():
 	# draw the background
 	my_board = board.Board(screen_height, screen_offset/10, player_color, SCREEN)
 	background = pygame.Surface((screen_height,screen_height))
-	bgwood = load_image("wood.jpg").convert()
-	bgwood.set_alpha(150)
+	wood = load_image("wood.jpg").convert()
+	wood.set_alpha(150)
+	bgwood = pygame.transform.scale(wood, (screen_height,screen_height))
 	my_board.draw(background)
 	background.blit(bgwood, (0,0))
 	SCREEN.blit(background, (my_board.edge_dist, 0))
@@ -95,6 +96,9 @@ def main():
 
 	#initialize piece sprites
 	my_board.init_pieces(my_board.player)
+	
+	#initialize opponent
+	opp = intel.Intelligence(my_board, "bl", intel.Intelligence.TOP)
 
 	newClick = False
 	newRelease = False
@@ -136,7 +140,14 @@ def main():
 					my_board.pieceReset(ra1, fi1)
 					
 				interface.update_interface()
+				
+		if my_game.current_move == "bl":
+			opp.imagine(my_board, opp.color, my_game)
+			interface.update_interface()
 
+	
+		
+		
 		for event in pygame.event.get():
 			if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
 					print_sequence(my_game.sequence)

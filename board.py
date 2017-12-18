@@ -10,8 +10,6 @@ class Board():
 		self.screen = screen
 		self.player = player
 		self.rect = pygame.Rect(edge_dist, 0, height, height)
-		global player_color
-		player_color = player
 		self.board = [[0 for x in range(9)] for y in range(9)]
 		self.height = height
 		self.edge_dist = edge_dist
@@ -25,7 +23,6 @@ class Board():
 	def set_background(self, background):
 		self.background = background
 
-
 	def space_to_rect(self, ra, fi):
 		y = (ra - 1) * self.space_height
 		x = (fi-1) * self.space_height + self.edge_dist
@@ -35,7 +32,6 @@ class Board():
 		ra = math.ceil(y/self.space_height)
 		fi = math.ceil((x - self.edge_dist)/self.space_height)
 		return (ra, fi)
-
 
 	def rank_to_y(self, ra):
 		y = (ra - 1) * self.space_height
@@ -97,8 +93,18 @@ class Board():
 				screen.blit(piece.image, position_to_pixels(ra, fi))
 	
 	def getPiece(self, ra, fi):
-		return self.board[ra][fi]
-
+		piece = self.board[ra][fi]
+		if piece != 0:
+			return piece
+		else:
+			return False
+			
+	def get_piece_color(self, ra, fi):
+		piece = self.getPiece(ra, fi)
+		if piece:
+			return piece.color
+		else:
+			return False
 
 	def makePiece(self, piece, ra, fi, color):
 		x = self.file_to_x(fi)
@@ -195,15 +201,24 @@ class Board():
 			return False
 		piece.rect = pygame.Rect(self.file_to_x(fi), self.rank_to_y(ra), self.space_height, self.space_height)
 		return False
+		
+	def ai_move(self, my_game, ra1, fi1, ra2, fi2):
+		
+		self.move_piece(ra1, fi1, ra2, fi2)
+		my_game.next_move(self)
 	
 	def move_piece(self, ra1, fi1, ra, fi):
 		if ra < 1 or ra > 8 or fi < 1 or fi > 8:
 			return False
+			
 		piece = self.board[ra1][fi1]
+		
 		if piece == 0:
 			return False
+			
 		if self.hasPiece(ra, fi):
 			return self.takePiece(ra1, fi1, ra, fi)
+			
 		elif self.validMove(ra, fi, piece):
 			print("Moving Piece " + str(self.board[ra1][fi1]))
 			piece.rect = pygame.Rect(self.file_to_x(fi), self.rank_to_y(ra), self.space_height, self.space_height)
@@ -219,6 +234,7 @@ class Board():
 	def takePiece(self, ra1, fi1, ra, fi):
 		piece = self.board[ra1][fi1]
 		piece2 = self.board[ra][fi]
+
 		if self.checkColor(piece, piece2) and piece.validTake(self, ra, fi):
 			piece2 = self.board[ra][fi]
 			piece2.kill()
