@@ -17,7 +17,6 @@ class Game():
 				for fi in range(9):
 					piece = my_board.board[ra][fi]
 					if isinstance(piece, pieces.Pawn):	
-						#print(str(piece.ra) + " " + str(piece.fi) + " en passant able? " + str(piece.en_passant_able))
 						if piece.color == "bl":
 							piece.en_passant_able = False
 		else:	
@@ -28,7 +27,6 @@ class Game():
 				for fi in range(9):
 					piece = my_board.board[ra][fi]
 					if isinstance(piece, pieces.Pawn):	
-						#print(str(piece.ra) + " " + str(piece.fi) + " en passant able? " + str(piece.en_passant_able))
 						if piece.color == "wh":
 							piece.en_passant_able = False
 		
