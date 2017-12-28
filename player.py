@@ -1,4 +1,4 @@
-import pygame, board
+import pygame, board, copy
 
 class Player():
 	def __init__(self, my_board, color, posit):
@@ -14,11 +14,6 @@ class Player():
 		
 	# --------------------------------------------------------------------------------
 	def gen_moves(self, my_board):	
-		# Checking if king is checked, then gen_checked_moves
-		if my_board.is_check(self.color):
-			self.gen_checked_moves(my_board)
-			return True
-	
 		self.moves = []
 		self.takes = []
 		
@@ -35,68 +30,67 @@ class Player():
 					for take in piece.takes:
 						self.takes.append((piece.ra, piece.fi, take[0], take[1]))
 						
-	"""
 	# Generates checked moves by analysis of whether move will lead to an unchecked king
 	# If no move is found, then player is checkmated
-	def gen_checked_moves(self, my_board):
-		self.gen_moves(my_board)
+	def check_avoidance(self, my_board):
 		checked_moves = []
 		checked_takes = []
 		
-		virt_board = board.Virtual_Board(my_board.plyr1)
+		virt_board = board.Virtual_Board(my_board.plyr1_color)
 		virt_board.board = copy.copy(my_board.board)
 		
 		for move in self.moves:
+			#print("\nPossible Move: " + board.Board.file_[move[1]] + board.Board.rank_[move[0]] + " to " + board.Board.file_[move[3]] + board.Board.rank_[move[2]])
 			# create new board with same pieces as my_board
 			temp_piece = virt_board.get_piece(move[2], move[3])
 			moved_piece = virt_board.get_piece(move[0], move[1])
 			
 			virt_board.set_space(move[2], move[3], moved_piece)
 			virt_board.set_space(move[0], move[1], 0)
-			virt_board.gen_moves()
-			virt_board.update_check(self)
+			
+			my_board.plyr2.gen_moves(my_board)
+			virt_board.update_check(my_board.plyr1, my_board.plyr2)
 			
 			virt_board.set_space(move[0], move[1], moved_piece)
 			virt_board.set_space(move[2], move[3], temp_piece)
 			
+			#print("Will take uncheck? " + str(not virt_board.is_check(self.color)))
 			
 			if not virt_board.is_check(self.color):
 				checked_moves.append((move[0], move[1], move[2], move[3]))
 				
 		
-		print("\n\nFinding possible takes...")
+		#print("\n\nFinding possible takes...")
 		for take in self.takes:
-			print("\nPossible Take: " + board.Board.file_[take[1]] + board.Board.rank_[take[0]] + " to " + board.Board.file_[take[3]] + board.Board.rank_[take[2]])
+			#print("\nPossible Take: " + board.Board.file_[take[1]] + board.Board.rank_[take[0]] + " to " + board.Board.file_[take[3]] + board.Board.rank_[take[2]])
 			temp_piece = virt_board.get_piece(take[2], take[3])
 			taking_piece = virt_board.get_piece(take[0], take[1])
 			
 			virt_board.set_space(take[2], take[3], taking_piece)
 			virt_board.set_space(take[0], take[1], 0)
-			virt_board.gen_moves()
-			virt_board.update_check(self)
+			
+			my_board.plyr2.gen_moves(my_board)
+			virt_board.update_check(my_board.plyr1, my_board.plyr2)
 			
 			#print(str(virt_board.takes))
-			
-			for player_take in virt_board.takes:
-				print("Player threatens: " + board.Board.file_[player_take[1]] + board.Board.rank_[player_take[0]] + " to " + board.Board.file_[player_take[3]] + board.Board.rank_[player_take[2]])
 			
 			virt_board.set_space(take[0], take[1], taking_piece)
 			virt_board.set_space(take[2], take[3], temp_piece)
 			
-			print("Will take uncheck? " + str(not virt_board.is_check(self.color)))
+			#print("Will take uncheck? " + str(not virt_board.is_check(self.color)))
 			
 			if not virt_board.is_check(self.color):
 				checked_takes.append((take[0], take[1], take[2], take[3]))
-				
+		"""
 		for move in checked_moves:
-			print("ai uncheck move is " + str(move))
+			print("Player uncheck move is " + str(move))
 			
 		for take in checked_takes:
-			print("ai uncheck take is " + str(take))
-			
+			print("Player uncheck take is " + str(take))
+		"""
+		
 		self.moves = checked_moves
 		self.takes = checked_takes
-	"""
 	
 	# --------------------------------------------------------------------------------
 	def valid_move(self, my_board, ra1, fi1, ra2, fi2):
@@ -105,6 +99,7 @@ class Player():
 		# Not only must piece be in self.moves, but may have to satisfy certain special rules
 		if self.in_moves(ra1, fi1, ra2, fi2):
 			return piece.valid_move(my_board, ra2, fi2)
+		else: return False
 						
 	def in_takes(self, ra1, fi1, ra2, fi2):
 		return ((ra1, fi1, ra2, fi2) in self.takes)
@@ -114,7 +109,18 @@ class Player():
 		
 	# --------------------------------------------------------------------------------
 	def move_piece(self, my_board, ra1, fi1, ra, fi):
+		"""
+		if my_board.is_check(self.color):
+			self.gen_checked_moves(my_board)
+		else:
+		"""
 		self.gen_moves(my_board)
+		self.check_avoidance(my_board)
+		
+		if len(self.moves + self.takes) == 0:	
+			my_board.checkmate = self.color
+			return True
+			
 		piece = my_board.get_piece(ra1, fi1)
 		
 		if not piece:

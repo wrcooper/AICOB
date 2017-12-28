@@ -5,7 +5,7 @@
 # 11/5/2017
 # ------------------------------------------------------
 
-import pygame, time, os.path, math, board, game, UI, pieces, intelligence as intel, player
+import pygame, time, os.path, math, board, game, UI, pieces, intelligence as intel, player, pdb
 from pygame.locals import *
 
 # ---------------------------
@@ -74,7 +74,7 @@ def main():
 	board.Highlight.containers = highlight
 	board.Highlight_Current.containers = highlight_current
 	UI.UI.containers = ui
-	UI.Button.containers = ui
+	UI.Element.containers = ui
 	
 	# --------------------------------------------------------------------------------
 	# decorate the game window
@@ -114,7 +114,11 @@ def main():
 	opp = intel.Intelligence(my_board, "bl", board.Board.TOP)
 
 	my_board.set_players(plyr, opp)
+	my_board.set_interface(interface, ui)
 	
+	# ORDER MATTERS
+	my_board.set_groups(highlight, highlight_current, ui, all)
+
 
 	newClick = False
 	newRelease = False
@@ -154,24 +158,34 @@ def main():
 					
 				my_board.piece_released(my_game, plyr, opp, ra1, fi1, ra2, fi2)
 				
-				my_board.is_check(opp.color)
+				opp.gen_moves(my_board)		
 				
-				opp.gen_moves(my_board)
+				if my_board.checkmate != False:	
+					print(my_board.checkmate + " has LOST!!")
+					
+					
+				if my_board.game_draw == True:
+					print("Draw!!")
+				
 				piece_held = False
 			elif piece_held:
 				my_board.piece_reset(ra1, fi1)
 				piece_held = False
 					
 			interface.update_interface()
+		
+			
 				
 		if my_game.current_move == "bl":
-			opp.imagine(my_board, opp.color, my_game)
-			
-			my_board.is_check("wh")
-			
-			my_board.gen_moves()
+			opp.move(my_board, opp.color, my_game)
+			my_board.plyr1.gen_moves(my_board)
 			interface.update_interface()
-
+		
+		if my_board.checkmate != False:	
+			print(my_board.checkmate + " has LOST!!")
+			
+		if my_board.game_draw == True:
+			print("Draw!!")
 	
 		for event in pygame.event.get():
 			if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
@@ -179,16 +193,6 @@ def main():
 					return
 		keystate = pygame.key.get_pressed()
 		
-		highlight.clear(SCREEN, background)
-		highlight_current.clear(SCREEN, background)
-		ui.clear(SCREEN, background)
-		all.clear(SCREEN, background)
-		
-		
-		highlight_current.draw(SCREEN)
-		highlight.draw(SCREEN)
-		all.draw(SCREEN)
-		ui.draw(SCREEN)
-		pygame.display.update()
+		my_board.update()
 
 if __name__ == '__main__': main()

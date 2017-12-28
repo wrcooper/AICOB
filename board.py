@@ -1,4 +1,5 @@
-import pygame, math, inspect, chess, game, pieces
+import pygame, math, inspect, chess, game, pieces, time
+from pygame.locals import *
 
 
 
@@ -12,6 +13,7 @@ class Board():
 	# --------------------------------------------------------------------------------
 	def __init__(self, height, edge_dist, plyr1_color, screen):
 		self.screen = screen
+		self.clock = pygame.time.Clock()
 		
 		if plyr1_color == "wh":
 			plyr2_color = "bl"
@@ -31,6 +33,9 @@ class Board():
 		self.bl_check = False
 		self.moves = []
 		self.takes = []
+		self.checkmate = False
+		self.game_draw = False
+		self.pawn_promotion = False
 		
 	def set_players(self, plyr1, plyr2):
 		self.plyr1 = plyr1
@@ -50,10 +55,24 @@ class Board():
 				screen.fill(colors[current], pygame.Rect(x_distance,y_distance,space_height,space_height))
 				current += 1
 	
+	def set_groups(self, highlight, highlight_current, ui, all):
+		self.groups = (highlight, highlight_current, ui, all)
+		
+		self.layers = all
+		
+	def update(self):
+		for group in self.groups:
+			group.clear(self.screen, self.background)
+		for group in self.groups:
+			group.draw(self.screen)
+		pygame.display.update()
 	# --------------------------------------------------------------------------------
 	def set_background(self, background):
 		self.background = background
 
+	def set_interface(self, interface, group):
+		self.interface = interface
+		self.interface_group = group
 	# --------------------------------------------------------------------------------
 	# is mouse within board?
 	def within(self, mouse):
@@ -115,8 +134,6 @@ class Board():
 			self.make_piece("K", row1[i], 4, order[i])
 			self.make_piece("Q", row1[i], 5, order[i])
 			
-		self.gen_moves()
-
 	# --------------------------------------------------------------------------------
 	def make_piece(self, piece, ra, fi, color):
 		x = self.file_to_x(fi)
@@ -148,7 +165,6 @@ class Board():
 		self.board[ra][fi] = piece
 		return True
 	
-	
 	# --------------------------------------------------------------------------------
 	def has_piece(self, ra, fi):
 		if self.board[ra][fi] == 0:
@@ -168,6 +184,20 @@ class Board():
 			return False
 
 	# --------------------------------------------------------------------------------
+	# is player checkmated?
+	def is_checkmate(self, plyr):
+		plyr.gen_moves(self)
+		plyr.check_avoidance(self)
+		
+		if len(plyr.moves + plyr.takes) == 0 and self.is_check(plyr.color):
+			self.checkmate = plyr.color
+			return True
+		elif len(plyr.moves + plyr.takes) == 0:
+			self.game_draw = True
+			return True
+		else:
+			return False
+	
 	# is king in check?
 	def is_check(self, color):
 		if color == "wh":
@@ -225,22 +255,6 @@ class Board():
 			else:
 					return False
 
-	# --------------------------------------------------------------------------------				
-	def gen_moves(self):	
-		self.moves = []
-		self.takes = []
-		
-		for ra in range(1, 9):
-			for fi in range(1, 9):
-				piece = self.get_piece(ra, fi)
-				if piece and self.check_player(piece):
-					piece.gen_moves(self)
-					
-					for move in piece.moves:
-						self.moves.append((piece.ra, piece.fi, move[0], move[1]))
-						
-					for take in piece.takes:
-						self.takes.append((piece.ra, piece.fi, take[0], take[1]))
 					
 	# --------------------------------------------------------------------------------				
 	# checks if move is a valid move
@@ -282,9 +296,19 @@ class Board():
 			
 		#move piece
 		if plyr.move_piece(self, ra1, fi1, ra2, fi2):
+			if ra2 == 1 and isinstance(self.get_piece(ra2, fi2), pieces.Pawn):
+				self.promote_pawn(ra2, fi2)
+		
 			self.update_check(plyr, opp)
+			
+			if self.is_checkmate(self.plyr2):
+				self.last_move = self.last_move + "#"
+				my_game.next_move(self)
+				return True
+			
 			if self.is_check(opp.color):
 				self.last_move = self.last_move + "+"
+				
 			my_game.next_move(self)
 		else:
 			self.piece_reset(ra1, fi1)
@@ -318,7 +342,47 @@ class Board():
 		highlight = Highlight_Current(ra, fi, self)
 		return highlight
 					
+	# --------------------------------------------------------------------------------
+	def promote_pawn(self, ra, fi):
+		old_piece = self.get_piece(ra, fi)
+		old_piece.kill()
+		self.open_pawn_promotion(ra, fi)
+	
+	def open_pawn_promotion(self, ra, fi):
+		self.interface.open_pawn_promotion(self.plyr1_color, self)
+		self.interface_group.draw(self.screen)
+		pygame.display.update()
 		
+		pawn_promoted = False
+		newRelease = False
+		lastRelease = False
+		print("Before While")
+		pygame.event.clear(MOUSEBUTTONUP)
+		
+		while not pawn_promoted:
+			self.clock.tick(40)
+			print("While")
+		
+			if pygame.event.peek(MOUSEBUTTONUP):
+				for mouse_release in pygame.event.get(MOUSEBUTTONUP):
+					lastRelease = mouse_release
+				newRelease = True
+				print(lastRelease.pos[0], lastRelease.pos[1])
+				
+			print("Promotion selected? " + str(self.interface.pawn_prom.clicked(lastRelease)))
+			
+			if newRelease and self.interface.pawn_prom.clicked(lastRelease):
+				piece = self.interface.select_promotion(lastRelease)
+				print(str(piece))
+				print("Here")
+				
+				if piece != False:
+					self.make_piece(piece, ra, fi, self.plyr1_color)
+					pawn_promoted = True
+					
+			newRelease = False		
+				
+					
 def colorKey(color, n):
 	if (color == "bl"):
 		return n + 6
@@ -330,8 +394,6 @@ def space_tostr(ra, fi):
 					
 def valid_space(ra, fi):
 	return ra > 0 and ra < 9 and fi > 0 and fi < 9
-
-	
 		
 class Virtual_Board(Board):
 	def __init__(self, plyr1_color):
@@ -339,8 +401,8 @@ class Virtual_Board(Board):
 		self.plyr1_color = plyr1_color
 		self.takes = []
 		self.moves = [] 
-		
-
+		self.wh_check = False
+		self.bl_check = False
 	
 class Highlight(pygame.sprite.Sprite):
 	def __init__(self, ra, fi, board):
