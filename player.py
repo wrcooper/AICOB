@@ -25,10 +25,10 @@ class Player():
 					piece.gen_moves(my_board)
 					
 					for move in piece.moves:
-						self.moves.append((piece.ra, piece.fi, move[0], move[1]))
+						self.moves.append((ra, fi, move[0], move[1]))
 						
 					for take in piece.takes:
-						self.takes.append((piece.ra, piece.fi, take[0], take[1]))
+						self.takes.append((ra, fi, take[0], take[1]))
 						
 	# Generates checked moves by analysis of whether move will lead to an unchecked king
 	# If no move is found, then player is checkmated
@@ -48,7 +48,7 @@ class Player():
 			virt_board.set_space(move[2], move[3], moved_piece)
 			virt_board.set_space(move[0], move[1], 0)
 			
-			my_board.plyr2.gen_moves(my_board)
+			my_board.plyr2.gen_moves(virt_board)
 			virt_board.update_check(my_board.plyr1, my_board.plyr2)
 			
 			virt_board.set_space(move[0], move[1], moved_piece)
@@ -69,7 +69,7 @@ class Player():
 			virt_board.set_space(take[2], take[3], taking_piece)
 			virt_board.set_space(take[0], take[1], 0)
 			
-			my_board.plyr2.gen_moves(my_board)
+			my_board.plyr2.gen_moves(virt_board)
 			virt_board.update_check(my_board.plyr1, my_board.plyr2)
 			
 			#print(str(virt_board.takes))
@@ -109,13 +109,6 @@ class Player():
 		
 	# --------------------------------------------------------------------------------
 	def move_piece(self, my_board, ra1, fi1, ra, fi):
-		"""
-		if my_board.is_check(self.color):
-			self.gen_checked_moves(my_board)
-		else:
-		"""
-		self.gen_moves(my_board)
-		self.check_avoidance(my_board)
 		
 		if len(self.moves + self.takes) == 0:	
 			my_board.checkmate = self.color

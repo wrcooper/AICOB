@@ -1,0 +1,3 @@
+Chess TODO:
+- Reorganize code, group helper functions
+- Fix AI en passant

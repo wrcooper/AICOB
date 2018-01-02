@@ -4,16 +4,28 @@ def in_bounds(ra, fi):
 	return (ra > 0 and ra < 9 and fi > 0 and fi < 9)
 
 class Piece(pygame.sprite.Sprite):
+	PAWN = 0
+	ROOK = 1
+	KNGH = 2
+	BSHP = 3
+	KING = 4
+	QUEN = 5
 	images = []
 	# --------------------------------------------------------------------------------
-	def __init__(self, ra, fi, x, y, height, color):
+	def __init__(self, ra, fi, color):
 		pygame.sprite.Sprite.__init__(self, self.containers)
-		self.rect = pygame.Rect(x, y, height, height)
 		self.hasMoved = False
 		self.color = color
 		self.ra = ra
 		self.fi = fi
 		self.en_passant_able = False
+		self.valid = True
+		
+	def set_rect(self, x, y, height):
+		self.rect = pygame.Rect(x, y, height, height)
+		
+	def set_containers(self, containers):
+		self.containers = containers
 		
 	# --------------------------------------------------------------------------------
 	def load_image(n, height):
@@ -24,7 +36,7 @@ class Piece(pygame.sprite.Sprite):
 		return (self.ra, self.fi)
 		
 	def take_to_str(self, ra, fi):
-		return self.shorthand + "x" + board.space_tostr(ra, fi)
+		return self.shorthand + "x" + board.space_to_str(ra, fi)
 
 	def pos_to_str(ra, fi):
 		pos = str(Board.file_[fi]) + str(ra)
@@ -36,7 +48,8 @@ class Piece(pygame.sprite.Sprite):
 		else:
 			return 1
 
-	# --------------------------------------------------------------------------------			
+	# --------------------------------------------------------------------------------	
+	# RETURNS whether a POSITION is ON the BOARD and NOT the CURRENT POSITION
 	def possible_move(self, ra, fi):
 		if in_bounds(ra, fi) and (ra, fi) != self.get_position():
 			return True
@@ -44,40 +57,41 @@ class Piece(pygame.sprite.Sprite):
 			return False
 			
 	# --------------------------------------------------------------------------------
+	# RETURNS whether the TAKE SATISFIES the piece's TAKE RULE and is attempted on a piece of OPPOSITE COLOR
 	def valid_take(self, my_board, ra, fi):
-		if my_board.has_piece(ra, fi) and self.possible_move(ra, fi) and self.takeRule(my_board, ra, fi) and self.color != my_board.board[ra][fi].color:
+		if self.valid and my_board.has_piece(ra, fi) and self.possible_move(ra, fi) and self.takeRule(my_board, ra, fi) and self.is_opp(my_board, ra ,fi):
 			return True
 		else: return False
 			
 	# --------------------------------------------------------------------------------
+	# RETURNS whether the MOVE SATISFIES the piece's MOVE RULE and is attempted on an EMPTY SPACE
 	def valid_move(self, my_board, ra, fi):
-		if self.possible_move(ra, fi) and self.moveRule(my_board, ra, fi):
+		if self.valid and self.possible_move(ra, fi) and self.moveRule(my_board, ra, fi) and not my_board.has_piece(ra, fi):
 			return True
 		else: return False
 		
-
-			
+	# RETURNS MOVE STRING for PGN	
 	def move_str(self, ra, fi):
-		return self.shorthand + board.space_tostr(ra, fi)
-		
+		return self.shorthand + board.space_to_str(ra, fi)
+	
+	# RETURNS whether a TAKE is POSSIBLE
 	def can_take(self, my_board, ra, fi):
 		return(in_bounds(ra, fi) and my_board.has_piece(ra, fi) and self.is_opp(my_board, ra, fi))
 		
+	# RETURNS whether a PIECE is of the OPPOSITE COLOR
 	def is_opp(self, my_board, ra, fi):
 		return self.color != my_board.get_piece_color(ra, fi)
 
+	# PROCESSES SPECIAL MOVES for a piece and APPENDS MOVE to PGN
 	def moveRule(self, my_board, ra, fi):
-		self.gen_moves(my_board)
-		
 		if ((ra, fi) in self.moves):
 			my_board.last_move = self.move_str(ra, fi)
 			return True
 		else:
 			return False
 			
+	# PROCESSES SPECIAL TAKES for a piece and APPENDS MOVE to PGN		
 	def takeRule(self, my_board, ra, fi):
-		self.gen_moves(my_board)
-		
 		if ((ra,fi) in self.takes):
 			my_board.last_move = self.take_to_str(ra, fi)
 			return True
@@ -85,18 +99,26 @@ class Piece(pygame.sprite.Sprite):
 			return False
 
 class Pawn(Piece):
-	def __init__(self, ra, fi, x, y, height, color):
-		Piece.__init__(self, ra, fi, x, y, height, color)
+	def __init__(self, ra, fi, color):
+		Piece.__init__(self, ra, fi, color)
 		self.en_passant_able = False
 		self.shorthand = ""
-		self.image = Piece.load_image(board.colorKey(color, 0), height)
+		self.index = 0
+		
+	def set_image(self, height):
+		self.image = Piece.load_image(board.colorKey(self.color, 0), height)
+		
 
-	# returns a list of possible moves in the form of (ra, fi)
+	# RETURNS a list of POSSIBLE MOVES in the form of [(ra1, fi1), (ra2, fi2), ...]
 	def gen_moves(self, my_board):
+	
+		# IF SELF is NOT VALID, generate NO MOVES
+		if not self.valid: return
+	
 		self.moves = []
 		self.takes = []
 		
-		# two spaces forward if not moved
+		# TWO SPACES FORWARD if NOT MOVED
 		two_fwd = (self.ra + self.direction(my_board) * 2)
 		one_fwd = (self.ra + self.direction(my_board))
 		
@@ -105,12 +127,12 @@ class Pawn(Piece):
 				if my_board.is_empty(one_fwd, self.fi) and my_board.is_empty(two_fwd, self.fi):
 					self.moves.append((two_fwd, self.fi))
 			
-		# one space forward
+		# ONE SPACE FORWARD
 		if in_bounds((self.ra + self.direction(my_board) * 1), self.fi) and my_board.is_empty(one_fwd, self.fi):
 			self.moves.append(((self.ra + self.direction(my_board) * 1), self.fi))
 
 		
-		# en passant
+		# EN PASSANT
 		ra = self.ra + self.direction(my_board)
 		fi = self.fi - 1
 		if in_bounds(ra, fi):
@@ -123,18 +145,18 @@ class Pawn(Piece):
 			if my_board.is_empty(ra, fi) and isinstance(my_board.board[self.ra][self.fi + 1], Piece) and my_board.board[self.ra][self.fi + 1].en_passant_able:
 				self.moves.append((ra, fi))
 				
-		# regular takes
+		# REGULAR TAKES
 		if self.can_take(my_board, one_fwd, self.fi - 1):
 			self.takes.append(((self.ra + self.direction(my_board) * 1), (self.fi - 1 )))
 		if self.can_take(my_board, one_fwd, self.fi + 1):
 			self.takes.append(((self.ra + self.direction(my_board) * 1), (self.fi + 1 )))
 
 		
-		
+	# TODO: RENAME to move()
+	"""
 	def moveRule(self, my_board, ra, fi):
 		if ((ra, fi) in self.moves):
-		
-			# en passant special case
+			# EN PASSANT SPECIAL CASE
 			if ra == (self.ra + (self.direction(my_board) * 1)) and abs(fi - self.fi) == 1:
 				other_piece = my_board.board[self.ra][fi]
 				if isinstance(other_piece,Pawn) and other_piece.en_passant_able:
@@ -144,36 +166,38 @@ class Pawn(Piece):
 					return True
 		
 			else:
-				my_board.last_move = board.space_tostr(ra,fi)
+				my_board.last_move = board.space_to_str(ra,fi)
 				if (ra, fi) == ((self.ra + self.direction(my_board) * 2), self.fi):
 					self.en_passant_able = True
 				else:
 					self.en_passant_able = False
 				return True
-
+	"""
+	# TODO: RENAME to take()
 	def takeRule(self, my_board, ra, fi):
-		
 		if ((ra,fi) in self.takes):
 			my_board.last_move = board.Board.file_[self.fi] + self.take_to_str(ra, fi)
 			return True
 		else:
 			return False	
-
-			
 			
 	def move_str(self, ra, fi):
-		return board.space_tostr(ra,fi)
+		return board.space_to_str(ra,fi)
 	
 	def take_to_str(self, ra, fi):
-		return board.Board.file_[self.fi] + self.shorthand + "x" + board.space_tostr(ra, fi)
+		return board.Board.file_[self.fi] + self.shorthand + "x" + board.space_to_str(ra, fi)
 
 class Rook(Piece):
-	def __init__(self, ra, fi, x, y, height, color):
-		Piece.__init__(self, ra, fi, x, y, height, color)
+	def __init__(self, ra, fi, color):
+		Piece.__init__(self, ra, fi, color)
 		self.shorthand = "R"
-		self.image = Piece.load_image(board.colorKey(color, 1), height)
+		self.index = 1
+		
+	def set_image(self, height):
+		self.image = Piece.load_image(board.colorKey(self.color, 1), height)
 		
 	def gen_moves(self, my_board):
+		if not self.valid: return
 		self.moves = []
 		self.takes = []
 	
@@ -212,12 +236,16 @@ class Rook(Piece):
 
 
 class Knight(Piece):
-	def __init__(self, ra, fi, x, y, height, color):
-		Piece.__init__(self, ra, fi, x, y, height, color)
+	def __init__(self, ra, fi, color):
+		Piece.__init__(self, ra, fi, color)
 		self.shorthand = "N"
-		self.image = Piece.load_image(board.colorKey(color, 2), height)
+		self.index = 2
+		
+	def set_image(self, height):
+		self.image = Piece.load_image(board.colorKey(self.color, 2), height)
 
 	def gen_moves(self, my_board):
+		if not self.valid: return
 		self.moves = []
 		self.takes = []
 		
@@ -283,12 +311,16 @@ class Knight(Piece):
 		
 
 class Bishop(Piece):
-	def __init__(self, ra, fi, x, y, height, color):
-		Piece.__init__(self, ra, fi, x, y, height, color)
+	def __init__(self, ra, fi, color):
+		Piece.__init__(self, ra, fi, color)
 		self.shorthand = "B"
-		self.image = Piece.load_image(board.colorKey(color, 3), height)
+		self.index = 3
+		
+	def set_image(self, height):
+		self.image = Piece.load_image(board.colorKey(self.color, 3), height)
 
 	def gen_moves(self, my_board):
+		if not self.valid: return
 		self.moves = []
 		self.takes = []
 		
@@ -346,12 +378,16 @@ class Bishop(Piece):
 
 
 class King(Piece):
-	def __init__(self, ra, fi, x, y, height, color):
-		Piece.__init__(self, ra, fi, x, y, height, color)
+	def __init__(self, ra, fi, color):
+		Piece.__init__(self, ra, fi, color)
 		self.shorthand = "K"
-		self.image = Piece.load_image(board.colorKey(color, 4), height)
+		self.index = 4
+		
+	def set_image(self, height):
+		self.image = Piece.load_image(board.colorKey(self.color, 4), height)
 		
 	def gen_moves(self, my_board):
+		if not self.valid: return
 		self.moves = []
 		self.takes = []
 	
@@ -387,30 +423,48 @@ class King(Piece):
 		
 		if ra == self.ra and fi - self.fi == -2:
 			if ((ra, fi) in self.moves):
-				castle = my_board.move_piece(ra, 1, ra, fi + 1)
+				piece = my_board.get_piece(ra, 1)
+				piece.rect = pygame.Rect(my_board.file_to_x(fi + 1), my_board.rank_to_y(ra), my_board.space_height, my_board.space_height)
+				my_board.set_space(ra, 1, 0)
+				piece.ra = ra
+				piece.fi = fi + 1
+				piece.hasMoved = True
+				my_board.set_space(ra, fi + 1, piece)
+				
 				my_board.last_move = "O-O"
-				return castle
+				return True
 				
 		if ra == self.ra and fi - self.fi == 2:
 			if ((ra, fi) in self.moves):
-				castle = my_board.move_piece(ra, 8, ra, fi - 1)
+				piece = my_board.get_piece(ra, 8)
+				piece.rect = pygame.Rect(my_board.file_to_x(fi - 1), my_board.rank_to_y(ra), my_board.space_height, my_board.space_height)
+				my_board.set_space(ra, 8, 0)
+				piece.ra = ra
+				piece.fi = fi - 1
+				piece.hasMoved = True
+				my_board.set_space(ra, fi - 1, piece)
+				
 				my_board.last_move = "O-O-O"
-				return castle
+				return True
 				
 		if ((ra, fi) in self.moves):
-			my_board.last_move = self.shorthand + board.space_tostr(ra,fi)
+			my_board.last_move = self.shorthand + board.space_to_str(ra,fi)
 			return True
 		else: return False
 			
 		
 
 class Queen(Piece):
-	def __init__(self, ra, fi, x, y, height, color):
-		Piece.__init__(self, ra, fi, x, y, height, color)
+	def __init__(self, ra, fi, color):
+		Piece.__init__(self, ra, fi, color)
 		self.shorthand = "Q"
-		self.image = Piece.load_image(board.colorKey(color, 5), height)
+		self.index = 5
 
+	def set_image(self, height):
+		self.image = Piece.load_image(board.colorKey(self.color, 5), height)
+		
 	def gen_moves(self, my_board):
+		if not self.valid: return
 		self.moves = []
 		self.takes = []
 		
@@ -497,4 +551,3 @@ class Queen(Piece):
 			elif my_board.has_piece(self.ra, fi):
 				break
 			else: self.moves.append((self.ra, fi))
-		

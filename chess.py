@@ -129,26 +129,31 @@ def main():
 
 	while(True):
 		
+		# LIMIT FRAMERATE to 60
 		my_clock.tick(60)
 	
+		# GET CLICKS
 		for mouseClicked in pygame.event.get(MOUSEBUTTONDOWN):
 			lastClick = mouseClicked
 			newClick = True
 			
+		# GET MOUSE RELEASES
 		for mouseReleased in pygame.event.get(MOUSEBUTTONUP):
 			lastRelease = mouseReleased
 			newRelease = True
 	
+		# PICK UP PIECE IF CLICKED
 		if newClick:
 			if my_board.within(lastClick):
 				ra1 = my_board.y_to_rank(lastClick.pos[1])
 				fi1 = my_board.x_to_file(lastClick.pos[0])
 				piece_held = True
 				newClick = False
-				
+			
 		if piece_held:
 			my_board.piece_held(my_game, ra1, fi1, all)
-				
+			
+		# RELEASE PIECE IF RELEASED, MAKE MOVE
 		if newRelease:
 			newRelease = False
 				
@@ -158,11 +163,8 @@ def main():
 					
 				my_board.piece_released(my_game, plyr, opp, ra1, fi1, ra2, fi2)
 				
-				opp.gen_moves(my_board)		
-				
 				if my_board.checkmate != False:	
 					print(my_board.checkmate + " has LOST!!")
-					
 					
 				if my_board.game_draw == True:
 					print("Draw!!")
@@ -174,25 +176,28 @@ def main():
 					
 			interface.update_interface()
 		
-			
-				
+		# IF BLACK'S MOVE, MAKE MOVE
 		if my_game.current_move == "bl":
-			opp.move(my_board, opp.color, my_game)
+			opp.move(my_board, my_game)
 			my_board.plyr1.gen_moves(my_board)
 			interface.update_interface()
 		
+		# IF CHECKMATED, END GAME
 		if my_board.checkmate != False:	
 			print(my_board.checkmate + " has LOST!!")
 			
+		# IF DRAWN, END GAME
 		if my_board.game_draw == True:
 			print("Draw!!")
 	
+		# IF ESC PRESSED, QUIT PROGRAM
 		for event in pygame.event.get():
 			if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
 					print_sequence(my_game.sequence)
 					return
 		keystate = pygame.key.get_pressed()
 		
+		# UPDATE AND DRAW SCREEN
 		my_board.update()
 
 if __name__ == '__main__': main()
