@@ -15,6 +15,10 @@ class Intelligence():
 		self.takes = []
 		self.moves = [] 
 		
+	def print_takes(self):
+		for take in self.takes:
+			print(board.move_to_str(take))
+		
 		
 	# --------------------------------------------------------------------------------
 	# move a piece from a starting position and an ending position 
@@ -231,10 +235,12 @@ class Intelligence():
 		self.moves = checked_moves
 		self.takes = checked_takes
 		
+		"""
 		print("moves after check_avoidance: ")
 		print(self.moves)
 		print("takes after check_avoidance: ")
 		print(self.takes)
+		"""
 		
 		print("\n")
 		
@@ -245,23 +251,28 @@ class Intelligence():
 		virt_board.copy_board(my_board)
 		virt_board.set_players(my_board.plyr1, self)
 		decision = self.minimax(virt_board, 2, True)
+		print("Decision value is " + str(decision))
 		virt_board.kill()
 		return self.best_move
 		
 	# RETURNS OPTIMAL MOVE via classic naive minimax algorithm
 	def minimax(self, my_board, depth, my_turn):
 		if depth == 0:
+			# GENERATE MOVES, RETURN SCORE of the current state of the BOARD
+			self.gen_moves(my_board)
+			self.check_avoidance(my_board)
 			print(str(self.score_board(my_board)) + "\n")
 			return self.score_board(my_board)
 			
 		if my_turn:
-			print("Depth = " + str(depth))
+			# GENERATE MOVES based on current state of the BOARD
 			self.gen_moves(my_board)
 			self.check_avoidance(my_board)
 		
 			best_value = float('-inf')
 			possible = self.moves + self.takes
-				
+					
+			# TRY EACH MOVE in a NEW BOARD
 			for move in possible:
 				ra1 = move[0]
 				fi1 = move[1]
@@ -271,7 +282,8 @@ class Intelligence():
 				moved_piece = my_board.get_piece(ra1, fi1)
 				temp_piece = my_board.get_piece(ra2, fi2)
 				
-				if (moved_piece.valid_move(my_board, ra2, fi2) or moved_piece.valid_take(my_board, ra2, fi2)):
+				# IF MOVE is a MOVE
+				if moved_piece.valid_move(my_board, ra2, fi2):
 					
 					new_board = board.Virtual_Board(my_board.plyr1_color)
 					new_board.copy_board(my_board)
@@ -279,7 +291,10 @@ class Intelligence():
 				
 					new_board.virt_move(moved_piece, temp_piece, ra1, fi1, ra2, fi2)
 				
+					print("MY MOVE --------------------------------------------------------------------------------------")
 					print("My " + str(moved_piece))
+					print("value: " + str(self.score_board(my_board)) + "\n")
+					
 					print(board.Board.file_[fi1]+ board.Board.rank_[ra1] + " to: " + board.Board.file_[fi2] + board.Board.rank_[ra2])
 
 					new_board.print_board()
@@ -292,6 +307,31 @@ class Intelligence():
 						best_value = value
 						self.best_move = move
 				
+				# ELSE IF MOVE is a TAKE
+				elif moved_piece.valid_take(my_board, ra2, fi2):
+					
+					new_board = board.Virtual_Board(my_board.plyr1_color)
+					new_board.copy_board(my_board)
+					new_board.set_players(my_board.plyr1, self)
+				
+					new_board.virt_move(moved_piece, temp_piece, ra1, fi1, ra2, fi2)
+				
+					print("MY TAKE --------------------------------------------------------------------------------------")
+					print("My " + str(moved_piece))
+					print("value: " + str(self.score_board(my_board)) + "\n")
+					
+					print(board.Board.file_[fi1]+ board.Board.rank_[ra1] + " to: " + board.Board.file_[fi2] + board.Board.rank_[ra2])
+
+					new_board.print_board()
+				
+					value = self.minimax(new_board, depth-1, False)
+					
+					new_board.kill()
+				
+					if value > best_value: 
+						best_value = value
+						self.best_move = move
+					
 			print("Best value for depth" + str(depth) + " = " + str(best_value))
 			return best_value
 			
@@ -313,7 +353,7 @@ class Intelligence():
 				moved_piece = my_board.get_piece(ra1, fi1)
 				temp_piece = my_board.get_piece(ra2, fi2)
 				
-				if moved_piece.valid_move(my_board, ra2, fi2) or moved_piece.valid_take(my_board, ra2, fi2):
+				if moved_piece.valid_move(my_board, ra2, fi2):
 					
 					new_board = board.Virtual_Board(my_board.plyr1_color)
 					new_board.copy_board(my_board)
@@ -330,6 +370,24 @@ class Intelligence():
 					new_board.kill()
 				
 					if value < best_value: best_value = value
+				elif moved_piece.valid_take(my_board, ra2, fi2):
+					
+					new_board = board.Virtual_Board(my_board.plyr1_color)
+					new_board.copy_board(my_board)
+					new_board.set_players(my_board.plyr1, self)
+				
+					new_board.virt_move(moved_piece, temp_piece, ra1, fi1, ra2, fi2)
+				
+					print("Your " + str(moved_piece))
+					print(board.Board.file_[fi1]+ board.Board.rank_[ra1] + " to: " + board.Board.file_[fi2] + board.Board.rank_[ra2])
+
+					new_board.print_board()
+					value = self.minimax(new_board, depth-1, True)
+					
+					new_board.kill()
+				
+					if value < best_value: best_value = value
+				
 				
 			print("Best value for depth" + str(depth) + " = " + str(best_value))
 			return best_value
@@ -348,13 +406,13 @@ class Intelligence():
 					plyr_pieces[piece.index] += 1
 				else: my_pieces[piece.index] += 1
 		
-		score = 500 * (my_pieces[pieces.Piece.KING] - plyr_pieces[pieces.Piece.KING])
-		score += 10 * (my_pieces[pieces.Piece.QUEN] - plyr_pieces[pieces.Piece.QUEN])
-		score += 5 * (my_pieces[pieces.Piece.ROOK] - plyr_pieces[pieces.Piece.ROOK])
-		score += 3 * (my_pieces[pieces.Piece.KNGH] - plyr_pieces[pieces.Piece.KNGH])
-		score += 3 * (my_pieces[pieces.Piece.BSHP] - plyr_pieces[pieces.Piece.BSHP])
-		score += 1 * (my_pieces[pieces.Piece.PAWN] - plyr_pieces[pieces.Piece.PAWN])
-		score += 0.1 * (len(my_board.plyr1.moves) + len(my_board.plyr1.takes) - len(self.moves) - len(self.takes))
+		score = 5000 * (my_pieces[pieces.Piece.KING] - plyr_pieces[pieces.Piece.KING])
+		score += 100 * (my_pieces[pieces.Piece.QUEN] - plyr_pieces[pieces.Piece.QUEN])
+		score += 50 * (my_pieces[pieces.Piece.ROOK] - plyr_pieces[pieces.Piece.ROOK])
+		score += 30 * (my_pieces[pieces.Piece.KNGH] - plyr_pieces[pieces.Piece.KNGH])
+		score += 30 * (my_pieces[pieces.Piece.BSHP] - plyr_pieces[pieces.Piece.BSHP])
+		score += 10 * (my_pieces[pieces.Piece.PAWN] - plyr_pieces[pieces.Piece.PAWN])
+		score += 1 * (len(self.moves) + len(self.takes) - len(my_board.plyr1.moves) - len(my_board.plyr1.takes))
 		
 		return score
 					
@@ -369,7 +427,7 @@ class Intelligence():
 	# --------------------------------------------------------------------------------
 	# CHOOSE an OPTIMAL MOVE and MAKE IT
 	def move(self, my_board, my_game):
-		
+		# UPDATE CHECKMATE and DRAW
 		possible = self.moves + self.takes
 		
 		if len(possible) == 0 and my_board.is_check(self.color):
@@ -380,17 +438,20 @@ class Intelligence():
 			my_board.game_draw = True
 			return True
 		
+		# PICK a RANDOM MOVE, if choosing randomly
 		random.seed()
-		i = int(random.uniform(0, len(possible) - 1))	
+		i = int(random.uniform(0, len(possible) - 1))
 		
+		# PICK an OPTIMAL MOVE
 		move = self.decide(my_board)
 		
 		self.gen_moves(my_board)
 		self.check_avoidance(my_board)
 		
 		print(board.move_to_str(move))
-		print(move in self.takes)
-		print(self.takes)
+		print("Is this move a take? " + str(move in self.takes))
+		my_board.print_board()
+		self.print_takes()
 		if my_board.get_piece(move[2], move[3]):
 			print(my_board.get_piece(move[0], move[1]).can_take(my_board, move[2], move[3]))
 		
@@ -417,9 +478,9 @@ class Intelligence():
 		else: 
 			self.ai_move(my_board, possible[i][0], possible[i][1], possible[i][2], possible[i][3])				
 			self.check_promote(my_board, possible[i][2], possible[i][3])
-			my_game.next_move(my_board)
+			my_game.next_move(my_board)	
 		"""	
-			
+		
 		#for move in possible:
 			# another = self.imagine(this_move, depth + 1)
 			# (value, another)

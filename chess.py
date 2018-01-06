@@ -170,11 +170,13 @@ def main():
 					print("Draw!!")
 				
 				piece_held = False
+				my_board.update()
 			elif piece_held:
 				my_board.piece_reset(ra1, fi1)
 				piece_held = False
 					
 			interface.update_interface()
+			
 		
 		# IF BLACK'S MOVE, MAKE MOVE
 		if my_game.current_move == "bl":

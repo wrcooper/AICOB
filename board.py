@@ -477,8 +477,6 @@ class Virtual_Board(Board):
 		self.set_space(ra2, fi2, moved_piece)
 		moved_piece.ra = ra2
 		moved_piece.fi = fi2
-		if temp_piece != 0: 
-			temp_piece.kill()
 		self.set_space(ra1, fi1, 0)
 		
 	def virt_unmove(self, moved_piece, temp_piece, ra1, fi1, ra2, fi2):

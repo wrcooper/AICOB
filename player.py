@@ -13,6 +13,7 @@ class Player():
 		self.posit = posit # side of the board that this character is on, 1 = bottom, 2 = top
 		
 	# --------------------------------------------------------------------------------
+	# Merge gen_moves and check_avoidance
 	def gen_moves(self, my_board):	
 		self.moves = []
 		self.takes = []
@@ -37,22 +38,33 @@ class Player():
 		checked_takes = []
 		
 		virt_board = board.Virtual_Board(my_board.plyr1_color)
-		virt_board.board = copy.copy(my_board.board)
+		virt_board.copy_board(my_board)
 		
 		for move in self.moves:
 			#print("\nPossible Move: " + board.Board.file_[move[1]] + board.Board.rank_[move[0]] + " to " + board.Board.file_[move[3]] + board.Board.rank_[move[2]])
 			# create new board with same pieces as my_board
-			temp_piece = virt_board.get_piece(move[2], move[3])
-			moved_piece = virt_board.get_piece(move[0], move[1])
+			ra1 = move[0]
+			fi1 = move[1]
+			ra2 = move[2]
+			fi2 = move[3]
 			
-			virt_board.set_space(move[2], move[3], moved_piece)
-			virt_board.set_space(move[0], move[1], 0)
+			temp_piece = virt_board.get_piece(ra2, fi2)
+			moved_piece = virt_board.get_piece(ra1, fi1)
+			
+			moved_piece.ra, moved_piece.fi = ra2, fi2
+			if temp_piece: temp_piece.valid = False
+			
+			virt_board.set_space(ra2, fi2, moved_piece)
+			virt_board.set_space(ra1, fi1, 0)
 			
 			my_board.plyr2.gen_moves(virt_board)
 			virt_board.update_check(my_board.plyr1, my_board.plyr2)
 			
-			virt_board.set_space(move[0], move[1], moved_piece)
-			virt_board.set_space(move[2], move[3], temp_piece)
+			virt_board.set_space(ra1, fi1, moved_piece)
+			virt_board.set_space(ra2, fi2, temp_piece)
+			
+			moved_piece.ra, moved_piece.fi = ra1, fi1
+			if temp_piece: temp_piece.valid = True
 			
 			#print("Will take uncheck? " + str(not virt_board.is_check(self.color)))
 			
@@ -62,32 +74,43 @@ class Player():
 		
 		#print("\n\nFinding possible takes...")
 		for take in self.takes:
-			#print("\nPossible Take: " + board.Board.file_[take[1]] + board.Board.rank_[take[0]] + " to " + board.Board.file_[take[3]] + board.Board.rank_[take[2]])
-			temp_piece = virt_board.get_piece(take[2], take[3])
-			taking_piece = virt_board.get_piece(take[0], take[1])
+			#print("\nPossible Move: " + board.Board.file_[move[1]] + board.Board.rank_[move[0]] + " to " + board.Board.file_[move[3]] + board.Board.rank_[move[2]])
+			# create new board with same pieces as my_board
+			ra1 = take[0]
+			fi1 = take[1]
+			ra2 = take[2]
+			fi2 = take[3]
 			
-			virt_board.set_space(take[2], take[3], taking_piece)
-			virt_board.set_space(take[0], take[1], 0)
+			temp_piece = virt_board.get_piece(ra2, fi2)
+			moved_piece = virt_board.get_piece(ra1, fi1)
+			
+			moved_piece.ra, moved_piece.fi = ra2, fi2
+			if temp_piece: temp_piece.valid = False
+			
+			virt_board.set_space(ra2, fi2, moved_piece)
+			virt_board.set_space(ra1, fi1, 0)
 			
 			my_board.plyr2.gen_moves(virt_board)
 			virt_board.update_check(my_board.plyr1, my_board.plyr2)
 			
-			#print(str(virt_board.takes))
+			virt_board.set_space(ra1, fi1, moved_piece)
+			virt_board.set_space(ra2, fi2, temp_piece)
 			
-			virt_board.set_space(take[0], take[1], taking_piece)
-			virt_board.set_space(take[2], take[3], temp_piece)
+			moved_piece.ra, moved_piece.fi = ra1, fi1
+			if temp_piece: temp_piece.valid = True
 			
 			#print("Will take uncheck? " + str(not virt_board.is_check(self.color)))
 			
 			if not virt_board.is_check(self.color):
 				checked_takes.append((take[0], take[1], take[2], take[3]))
-		"""
-		for move in checked_moves:
-			print("Player uncheck move is " + str(move))
-			
-		for take in checked_takes:
-			print("Player uncheck take is " + str(take))
-		"""
+
+		my_board.plyr2.gen_moves(my_board)
+		
+		
+		print("moves after check_avoidance: ")
+		print(self.moves)
+		print("takes after check_avoidance: ")
+		print(self.takes)
 		
 		self.moves = checked_moves
 		self.takes = checked_takes
@@ -109,10 +132,7 @@ class Player():
 		
 	# --------------------------------------------------------------------------------
 	def move_piece(self, my_board, ra1, fi1, ra, fi):
-		
-		if len(self.moves + self.takes) == 0:	
-			my_board.checkmate = self.color
-			return True
+		if my_board.update_checkmate(self):	return True
 			
 		piece = my_board.get_piece(ra1, fi1)
 		
@@ -123,13 +143,15 @@ class Player():
 			return self.takePiece(my_board, ra1, fi1, ra, fi)
 			
 		elif self.valid_move(my_board, ra1, fi1, ra, fi):
-			print("Moving Piece " + str(my_board.board[ra1][fi1]))
 			my_board.last_move = piece.move_str(ra, fi)
+			
 			piece.rect = pygame.Rect(my_board.file_to_x(fi), my_board.rank_to_y(ra), my_board.space_height, my_board.space_height)
 			my_board.set_space(piece.ra, piece.fi, 0)
 			piece.ra = ra
 			piece.fi = fi
+			
 			piece.hasMoved = True
+			
 			my_board.set_space(ra, fi, piece)
 			self.gen_moves(my_board)
 			return True
@@ -143,7 +165,7 @@ class Player():
 		if not piece or not piece2:
 			return False
 
-		if my_board.check_color(piece, piece2) and piece.valid_take(my_board, ra, fi):
+		if piece.valid_take(my_board, ra, fi):
 			my_board.last_move = piece.take_to_str(ra, fi)
 			piece2.kill()
 			

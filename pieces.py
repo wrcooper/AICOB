@@ -153,7 +153,7 @@ class Pawn(Piece):
 
 		
 	# TODO: RENAME to move()
-	"""
+	
 	def moveRule(self, my_board, ra, fi):
 		if ((ra, fi) in self.moves):
 			# EN PASSANT SPECIAL CASE
@@ -172,7 +172,7 @@ class Pawn(Piece):
 				else:
 					self.en_passant_able = False
 				return True
-	"""
+	
 	# TODO: RENAME to take()
 	def takeRule(self, my_board, ra, fi):
 		if ((ra,fi) in self.takes):
@@ -248,7 +248,7 @@ class Knight(Piece):
 		if not self.valid: return
 		self.moves = []
 		self.takes = []
-		
+
 		ra = self.ra + 1
 		fi = self.fi + 2
 		if in_bounds(ra, fi):
