@@ -1,0 +1,46 @@
+rect_w = 612.0 start_x = 1272.0
+Current board before moving: 
+RNBKQBNR
+PPPPPPPP
+xxxxxxxx
+xxxxxxxx
+xxxPxxxx
+xxxxxxxx
+PPPxPPPP
+RNBKQBNR
+AI moving
+e7 to: e5
+Current board before moving: 
+RNBKQBNR
+PPPPxPPP
+xxxxxxxx
+xxxxPxxx
+xxxPxxxx
+xxxxPxxx
+PPPxxPPP
+RNBKQBNR
+AI moving
+e8 to: e6
+Current board before moving: 
+RNBKxBNR
+PPPPxPPP
+xxxxQxxx
+xxxxPxxx
+xxxPxxxx
+xPxxPxxx
+PxPxxPPP
+RNBKQBNR
+AI moving
+e5 to: d4
+Current board before moving: 
+RNBKxBNR
+PPPPxPPP
+xxxxQxxx
+xxxxxxxx
+xxBPxxxx
+xPxxPxxx
+PxPxxPPP
+RNBKQxNR
+AI moving
+d7 to: d5
+1. d4 e5 2. e3 Qe6 3. b3 d4 4. Bc4 d5 

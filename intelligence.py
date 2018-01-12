@@ -13,7 +13,6 @@ class Intelligence():
 		self.posit = posit # side of the board that this character is on, 1 = top, 2 = Bottom
 		
 		self.takes = []
-		self.moves = [] 
 		
 	def print_takes(self):
 		for take in self.takes:
@@ -26,22 +25,13 @@ class Intelligence():
 		#print("AI Moving Piece " + str(my_board.board[ra1][fi1]))
 		
 		# GET PIECE from starting position and APPEND PGN
-		piece = my_board.get_piece(ra1, fi1)
-		if not piece.valid_move(my_board, ra2, fi2): return False
-		my_board.last_move = piece.move_str(ra2, fi2)
+		piece1 = my_board.get_piece(ra1, fi1)
+		piece2 = my_board.get_piece(ra2, fi2)
 		
-		# move ANIMATION and SET NEW VISUAL POSITION
 		self.animate(my_board, ra1, fi1, ra2, fi2)
-		piece.rect = pygame.Rect(my_board.file_to_x(fi2), my_board.rank_to_y(ra2), my_board.space_height, my_board.space_height)
+		if not piece1.move(my_board, ra2, fi2): return False
 		
-		# set PREVIOUS POSITION to EMPTY
-		my_board.board[piece.ra][piece.fi] = 0
-			
-		# set PIECE POSITION to NEW POSITION
-		piece.ra = ra2
-		piece.fi = fi2
-		piece.hasMoved = True
-		my_board.board[ra2][fi2] = piece
+		if piece2: piece2.kill()
 
 		# GENERATE MOVES for both players based on new board condition
 		my_board.plyr1.gen_moves(my_board)
@@ -61,49 +51,6 @@ class Intelligence():
 		# if CHECKED, APPEND corresponding PGN
 		if my_board.is_check(my_board.plyr1_color):
 			my_board.last_move = my_board.last_move + "+"
-	
-	# TAKE a piece from a STARTING POSITION and an ENDING POSITION 	
-	def ai_take(self, my_board, ra1, fi1, ra2, fi2):
-		# GET BOTH PIECES
-		piece = my_board.board[ra1][fi1]
-		if not piece.valid_take(my_board, ra2, fi2): return False
-		piece2 = my_board.board[ra2][fi2]
-		
-		# ANIMATE and APPEND PGN
-		my_board.last_move = piece.take_to_str(ra2, fi2)
-		self.animate(my_board, ra1, fi1, ra2, fi2)
-		
-		# KILL second piece SPRITE
-		piece2 = my_board.board[ra2][fi2]
-		piece2.kill()
-		
-		# SET piece's NEW POSITION
-		piece.rect = pygame.Rect(my_board.file_to_x(fi2), my_board.rank_to_y(ra2), my_board.space_height, my_board.space_height)
-		piece.ra = ra2
-		piece.fi = fi2
-		my_board.board[ra2][fi2] = piece
-		
-		# EMPTY PREVIOUS POSITION
-		my_board.board[ra1][fi1] = 0
-		
-		# GENERATE MOVES
-		my_board.plyr1.gen_moves(my_board)
-		self.gen_moves(my_board)
-		
-		# UPDATE whether player is CHECKED
-		my_board.update_check(my_board.plyr1, self)
-		#print("white checked? " + str(my_board.wh_check))
-		#print("black checked? " + str(my_board.bl_check))
-		
-		# if CHECKMATE, APPEND corresponding PGN
-		if my_board.update_checkmate(my_board.plyr1):
-			my_board.last_move = my_board.last_move + "#"
-			return True
-		
-		# if CHECKED, APPEND corresponding PGN		
-		if my_board.is_check(my_board.plyr1_color):
-			my_board.last_move = my_board.last_move + "+"
-	
 		
 	# --------------------------------------------------------------------------------
 	# ANIMATE using simple distance/time velocity formula
@@ -164,7 +111,6 @@ class Intelligence():
 	def gen_moves(self, my_board):
 		# will predict moves for self
 		self.moves = []
-		self.takes = []
 		
 		for ra in range(1, 9):
 			for fi in range(1, 9):
@@ -174,75 +120,44 @@ class Intelligence():
 					
 					for move in piece.moves:
 						self.moves.append((piece.ra, piece.fi, move[0], move[1]))
-						
-					for take in piece.takes:
-						self.takes.append((piece.ra, piece.fi, take[0], take[1]))
-						
 		
 	# Filters player move list for moves that do not immediately check the player's king as a result
+	
 	def check_avoidance(self, my_board):
-		print("moves before check_avoidance: ")
-		print(self.moves)
-		print("takes before check_avoidance: ")
-		print(self.takes)
 		checked_moves = []
-		checked_takes = []
 		
 		virt_board = board.Virtual_Board(my_board.plyr1_color)
-		virt_board.board = copy.copy(my_board.board)
+		virt_board.copy_board(my_board)
+		virt_board.set_players(my_board.plyr1, self)
+		
+		self.gen_moves(virt_board)
 		
 		for move in self.moves:
+			#print("\nPossible Move: " + board.Board.file_[move[1]] + board.Board.rank_[move[0]] + " to " + board.Board.file_[move[3]] + board.Board.rank_[move[2]])
 			# create new board with same pieces as my_board
-			temp_piece = virt_board.get_piece(move[2], move[3])
-			moved_piece = virt_board.get_piece(move[0], move[1])
+			ra1 = move[0]
+			fi1 = move[1]
+			ra2 = move[2]
+			fi2 = move[3]
 			
-			virt_board.set_space(move[2], move[3], moved_piece)
-			virt_board.set_space(move[0], move[1], 0)
+			moved_piece = virt_board.get_piece(ra1, fi1)
 			
-			my_board.plyr1.gen_moves(virt_board)
-			virt_board.update_check(my_board.plyr1, self)
-			
-			virt_board.set_space(move[0], move[1], moved_piece)
-			virt_board.set_space(move[2], move[3], temp_piece)
-			
-			
-			if not virt_board.is_check(self.color):
-				checked_moves.append((move[0], move[1], move[2], move[3]))
-				
-		
-		#print("\n\nFinding possible takes...")
-		for take in self.takes:
-			#print("\nPossible Take: " + board.Board.file_[take[1]] + board.Board.rank_[take[0]] + " to " + board.Board.file_[take[3]] + board.Board.rank_[take[2]])
-			temp_piece = virt_board.get_piece(take[2], take[3])
-			taking_piece = virt_board.get_piece(take[0], take[1])
-			
-			virt_board.set_space(take[2], take[3], taking_piece)
-			virt_board.set_space(take[0], take[1], 0)
+			result = moved_piece.move(virt_board, ra2, fi2)
 			
 			my_board.plyr1.gen_moves(virt_board)
-			virt_board.update_check(my_board.plyr1, self)
-			
-			#print(str(virt_board.takes))
-			
-			virt_board.set_space(take[0], take[1], taking_piece)
-			virt_board.set_space(take[2], take[3], temp_piece)
+			virt_board.update_check(self, my_board.plyr2)
 			
 			#print("Will take uncheck? " + str(not virt_board.is_check(self.color)))
 			
 			if not virt_board.is_check(self.color):
-				checked_takes.append((take[0], take[1], take[2], take[3]))
-			
+				checked_moves.append((move[0], move[1], move[2], move[3]))
+				
+			virt_board.undo_move()
+		
 		self.moves = checked_moves
-		self.takes = checked_takes
 		
-		"""
-		print("moves after check_avoidance: ")
-		print(self.moves)
-		print("takes after check_avoidance: ")
-		print(self.takes)
-		"""
-		
-		print("\n")
+	
+		my_board.plyr1.gen_moves(virt_board)
 		
 		
 	# --------------------------------------------------------------------------------
@@ -250,147 +165,128 @@ class Intelligence():
 		virt_board = board.Virtual_Board(my_board.plyr1_color)
 		virt_board.copy_board(my_board)
 		virt_board.set_players(my_board.plyr1, self)
-		decision = self.minimax(virt_board, 2, True)
-		print("Decision value is " + str(decision))
+		
+		decision = self.minimax(virt_board, 3, float('-inf'), float('inf'), True)
+		# print("Decision value is " + str(decision))
 		virt_board.kill()
 		return self.best_move
 		
 	# RETURNS OPTIMAL MOVE via classic naive minimax algorithm
-	def minimax(self, my_board, depth, my_turn):
+	def minimax(self, my_board, depth, alpha, beta, my_turn):
+	
 		if depth == 0:
 			# GENERATE MOVES, RETURN SCORE of the current state of the BOARD
-			self.gen_moves(my_board)
-			self.check_avoidance(my_board)
-			print(str(self.score_board(my_board)) + "\n")
+			#self.gen_moves(my_board)
+			#self.check_avoidance(my_board)
+			# print("END REACHED ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 			return self.score_board(my_board)
+			
 			
 		if my_turn:
 			# GENERATE MOVES based on current state of the BOARD
 			self.gen_moves(my_board)
 			self.check_avoidance(my_board)
-		
+			
 			best_value = float('-inf')
-			possible = self.moves + self.takes
 					
 			# TRY EACH MOVE in a NEW BOARD
-			for move in possible:
+			for move in self.moves:
+				# print("MY MOVE: depth = " + str(depth) + "----------------------------------------------------------------------------------")
+				
 				ra1 = move[0]
 				fi1 = move[1]
 				ra2 = move[2]
 				fi2 = move[3]
 				
 				moved_piece = my_board.get_piece(ra1, fi1)
-				temp_piece = my_board.get_piece(ra2, fi2)
 				
-				# IF MOVE is a MOVE
-				if moved_piece.valid_move(my_board, ra2, fi2):
+				moved_piece.gen_moves(my_board)
+				
+				result = moved_piece.move(my_board, ra2, fi2)
+				
+				# make the move
+				
+				# if moved_piece == False:	
+					# print(ra1, fi1)
+				
+				# print("my move? " + str(result))
+				
+				# if result == False:
+					# print((ra2, fi2) in moved_piece.moves)
+				
+				# print("My " + str(moved_piece))
+				# print("value: " + str(self.score_board(my_board)) + "\n")
 					
-					new_board = board.Virtual_Board(my_board.plyr1_color)
-					new_board.copy_board(my_board)
-					new_board.set_players(my_board.plyr1, self)
-				
-					new_board.virt_move(moved_piece, temp_piece, ra1, fi1, ra2, fi2)
-				
-					print("MY MOVE --------------------------------------------------------------------------------------")
-					print("My " + str(moved_piece))
-					print("value: " + str(self.score_board(my_board)) + "\n")
-					
-					print(board.Board.file_[fi1]+ board.Board.rank_[ra1] + " to: " + board.Board.file_[fi2] + board.Board.rank_[ra2])
+				# print(board.Board.file_[fi1]+ board.Board.rank_[ra1] + " to: " + board.Board.file_[fi2] + board.Board.rank_[ra2])
 
-					new_board.print_board()
+				# my_board.print_board()
 				
-					value = self.minimax(new_board, depth-1, False)
+				# make move for opponent
+				value = max(best_value, self.minimax(my_board, depth-1, alpha, beta, False))
+				
+				alpha = max(value, alpha)
+				
+				if value > best_value: 
+					best_value = value
+					if depth == 3: self.best_move = move
 					
-					new_board.kill()
+				my_board.undo_move()
 				
-					if value > best_value: 
-						best_value = value
-						self.best_move = move
-				
-				# ELSE IF MOVE is a TAKE
-				elif moved_piece.valid_take(my_board, ra2, fi2):
+				if beta <= alpha:
+					break
 					
-					new_board = board.Virtual_Board(my_board.plyr1_color)
-					new_board.copy_board(my_board)
-					new_board.set_players(my_board.plyr1, self)
-				
-					new_board.virt_move(moved_piece, temp_piece, ra1, fi1, ra2, fi2)
-				
-					print("MY TAKE --------------------------------------------------------------------------------------")
-					print("My " + str(moved_piece))
-					print("value: " + str(self.score_board(my_board)) + "\n")
-					
-					print(board.Board.file_[fi1]+ board.Board.rank_[ra1] + " to: " + board.Board.file_[fi2] + board.Board.rank_[ra2])
-
-					new_board.print_board()
-				
-					value = self.minimax(new_board, depth-1, False)
-					
-					new_board.kill()
-				
-					if value > best_value: 
-						best_value = value
-						self.best_move = move
-					
-			print("Best value for depth" + str(depth) + " = " + str(best_value))
+			# print("Best value for depth" + str(depth) + " = " + str(best_value))
 			return best_value
 			
 		else: # opponent's turn
-			print("Depth = " + str(depth))
-			
 			my_board.plyr1.gen_moves(my_board)
 			my_board.plyr1.check_avoidance(my_board)
 			
-			best_value = float('inf')
-			possible = my_board.plyr1.moves + my_board.plyr1.takes
+			# my_board.print_board()
 			
-			for move in possible:
+			best_value = float('inf')
+			
+			for move in my_board.plyr1.moves:
+				# print("PLAYER MOVE: depth = " + str(depth) + "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
+				
 				ra1 = move[0]
 				fi1 = move[1]
 				ra2 = move[2]
 				fi2 = move[3]
 				
 				moved_piece = my_board.get_piece(ra1, fi1)
-				temp_piece = my_board.get_piece(ra2, fi2)
 				
-				if moved_piece.valid_move(my_board, ra2, fi2):
-					
-					new_board = board.Virtual_Board(my_board.plyr1_color)
-					new_board.copy_board(my_board)
-					new_board.set_players(my_board.plyr1, self)
+				result = moved_piece.move(my_board, ra2, fi2)
 				
-					new_board.virt_move(moved_piece, temp_piece, ra1, fi1, ra2, fi2)
+				# print("Your " + str(moved_piece))
 				
-					print("Your " + str(moved_piece))
-					print(board.Board.file_[fi1]+ board.Board.rank_[ra1] + " to: " + board.Board.file_[fi2] + board.Board.rank_[ra2])
+				# if result == False:
+					# print((ra2, fi2) in moved_piece.moves)
+				# print("player move? " + str(result))
+				
+				
+				# print("value: " + str(self.score_board(my_board)) + "\n")
+				# print(board.Board.file_[fi1]+ board.Board.rank_[ra1] + " to: " + board.Board.file_[fi2] + board.Board.rank_[ra2])
 
-					new_board.print_board()
-					value = self.minimax(new_board, depth-1, True)
-					
-					new_board.kill()
+				# my_board.print_board()
 				
-					if value < best_value: best_value = value
-				elif moved_piece.valid_take(my_board, ra2, fi2):
-					
-					new_board = board.Virtual_Board(my_board.plyr1_color)
-					new_board.copy_board(my_board)
-					new_board.set_players(my_board.plyr1, self)
+				value = min(best_value, self.minimax(my_board, depth-1, alpha, beta, True))
 				
-					new_board.virt_move(moved_piece, temp_piece, ra1, fi1, ra2, fi2)
+				beta = min(value, beta)
 				
-					print("Your " + str(moved_piece))
-					print(board.Board.file_[fi1]+ board.Board.rank_[ra1] + " to: " + board.Board.file_[fi2] + board.Board.rank_[ra2])
-
-					new_board.print_board()
-					value = self.minimax(new_board, depth-1, True)
-					
-					new_board.kill()
+				if value < best_value: best_value = value
 				
-					if value < best_value: best_value = value
+				my_board.undo_move()
+				
+				if beta <= alpha:
+					break
 				
 				
-			print("Best value for depth" + str(depth) + " = " + str(best_value))
+			# print("Best value for depth" + str(depth) + " = " + str(best_value))
 			return best_value
+			
+			
+			
 			
 	# RETURNS a SCORE of the BOARD CONFIGURATION in favor of this player
 	def score_board(self, my_board):
@@ -412,7 +308,7 @@ class Intelligence():
 		score += 30 * (my_pieces[pieces.Piece.KNGH] - plyr_pieces[pieces.Piece.KNGH])
 		score += 30 * (my_pieces[pieces.Piece.BSHP] - plyr_pieces[pieces.Piece.BSHP])
 		score += 10 * (my_pieces[pieces.Piece.PAWN] - plyr_pieces[pieces.Piece.PAWN])
-		score += 1 * (len(self.moves) + len(self.takes) - len(my_board.plyr1.moves) - len(my_board.plyr1.takes))
+		score += 1 * (len(self.moves) - len(my_board.plyr1.moves))
 		
 		return score
 					
@@ -428,7 +324,10 @@ class Intelligence():
 	# CHOOSE an OPTIMAL MOVE and MAKE IT
 	def move(self, my_board, my_game):
 		# UPDATE CHECKMATE and DRAW
-		possible = self.moves + self.takes
+		self.gen_moves(my_board)
+		self.check_avoidance(my_board)
+		
+		possible = self.moves
 		
 		if len(possible) == 0 and my_board.is_check(self.color):
 			print("Is AI checked? " + str(my_board.is_check(self.color)))
@@ -441,6 +340,7 @@ class Intelligence():
 		# PICK a RANDOM MOVE, if choosing randomly
 		random.seed()
 		i = int(random.uniform(0, len(possible) - 1))
+	
 		
 		# PICK an OPTIMAL MOVE
 		move = self.decide(my_board)
@@ -448,37 +348,21 @@ class Intelligence():
 		self.gen_moves(my_board)
 		self.check_avoidance(my_board)
 		
-		print(board.move_to_str(move))
-		print("Is this move a take? " + str(move in self.takes))
+		print("Current board before moving: ")
 		my_board.print_board()
-		self.print_takes()
-		if my_board.get_piece(move[2], move[3]):
-			print(my_board.get_piece(move[0], move[1]).can_take(my_board, move[2], move[3]))
 		
-		if ((move[0], move[1], move[2], move[3]) in self.takes):
-			print("AI taking")
-			print(board.move_to_str(move))
-			self.ai_take(my_board, move[0], move[1], move[2], move[3])	
-			self.check_promote(my_board, move[2], move[3])
-			my_game.next_move(my_board)
-		else: 
-			print("AI moving")
-			print(board.move_to_str(move))
-			self.ai_move(my_board, move[0], move[1], move[2], move[3])				
-			self.check_promote(my_board, move[2], move[3])
-			my_game.next_move(my_board)
+		print("AI moving")
+		print(board.move_to_str(move))
+		self.ai_move(my_board, move[0], move[1], move[2], move[3])				
+		self.check_promote(my_board, move[2], move[3])
+		my_game.next_move(my_board)
 	
 		"""
 		print(self.score_board(my_board))
 		
-		if ((possible[i][0], possible[i][1], possible[i][2], possible[i][3]) in self.takes):
-			self.ai_take(my_board, possible[i][0], possible[i][1], possible[i][2], possible[i][3])	
-			self.check_promote(my_board, possible[i][2], possible[i][3])
-			my_game.next_move(my_board)
-		else: 
-			self.ai_move(my_board, possible[i][0], possible[i][1], possible[i][2], possible[i][3])				
-			self.check_promote(my_board, possible[i][2], possible[i][3])
-			my_game.next_move(my_board)	
+		self.ai_move(my_board, possible[i][0], possible[i][1], possible[i][2], possible[i][3])				
+		self.check_promote(my_board, possible[i][2], possible[i][3])
+		my_game.next_move(my_board)	
 		"""	
 		
 		#for move in possible:

@@ -43,12 +43,10 @@ def main():
 	pygame.display.init() 
 	pygame.init()
 	SCREEN = pygame.display.set_mode([0,0], pygame.FULLSCREEN, 0)
-	screen_info = pygame.display.Info()
+	scrn_info = pygame.display.Info()
 
-	screen_offset = (screen_info.current_w - screen_info.current_h)/2 # this is the distance from the edge of the board to the edge of the screen
-
-	screen_height = screen_info.current_h
-	screen_width = screen_info.current_w
+	scrn_height = scrn_info.current_h
+	scrn_width = scrn_info.current_w
 
 	# --------------------------------------------------------------------------------
 	# initialize images
@@ -81,18 +79,10 @@ def main():
 	pygame.display.set_caption('Artificially Intelligent Chess Oriented Bot')
 
 	# --------------------------------------------------------------------------------
-	# draw the background
-	my_board = board.Board(screen_height, screen_offset/10, plyr1_color, SCREEN)
-	background = pygame.Surface((screen_height,screen_height))
+	# init board, draw the background
+	my_board = board.Board(scrn_info, plyr1_color, SCREEN)
 	wood = load_image("wood.jpg").convert()
-	wood.set_alpha(150)
-	bgwood = pygame.transform.scale(wood, (screen_height,screen_height))
-	my_board.draw(background)
-	background.blit(bgwood, (0,0))
-	SCREEN.blit(background, (my_board.edge_dist, 0))
-	background = SCREEN.copy()
-	my_board.set_background(background)
-	pygame.display.flip()
+	my_board.bg_init(wood)
 	
 	# --------------------------------------------------------------------------------
 	# init game and clock
@@ -101,7 +91,7 @@ def main():
 
 	# --------------------------------------------------------------------------------
 	# initialize UI
-	interface = UI.UI(screen_info, my_game, load_image("wood2.jpg"))
+	interface = UI.UI(scrn_info, my_game, load_image("wood2.jpg"))
 	interface.init_game_interface()
 
 	# --------------------------------------------------------------------------------
@@ -153,7 +143,7 @@ def main():
 		if piece_held:
 			my_board.piece_held(my_game, ra1, fi1, all)
 			
-		# RELEASE PIECE IF RELEASED, MAKE MOVE
+		# RELEASE PIECE IF RELEASED, ATTEMPT MOVE
 		if newRelease:
 			newRelease = False
 				
@@ -163,20 +153,14 @@ def main():
 					
 				my_board.piece_released(my_game, plyr, opp, ra1, fi1, ra2, fi2)
 				
-				if my_board.checkmate != False:	
-					print(my_board.checkmate + " has LOST!!")
-					
-				if my_board.game_draw == True:
-					print("Draw!!")
-				
 				piece_held = False
 				my_board.update()
+				
 			elif piece_held:
 				my_board.piece_reset(ra1, fi1)
 				piece_held = False
 					
 			interface.update_interface()
-			
 		
 		# IF BLACK'S MOVE, MAKE MOVE
 		if my_game.current_move == "bl":

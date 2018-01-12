@@ -11,22 +11,25 @@ class Board():
 	rank_ = ['', '8', '7', '6', '5', '4', '3', '2', '1']
 
 	# --------------------------------------------------------------------------------
-	def __init__(self, height, edge_dist, plyr1_color, screen):
+	def __init__(self, scrn_info, plyr1_color, screen):
 		self.screen = screen
+		self.scrn_info = scrn_info
 		self.clock = pygame.time.Clock()
 		
-		if plyr1_color == "wh":
-			plyr2_color = "bl"
-		else: plyr2_color = "wh"
+		self.set_player_colors(plyr1_color)
 		
-		self.plyr1_color = plyr1_color
-		self.plyr2_color = plyr2_color
+		scrn_h = scrn_info.current_h
+		scrn_w = scrn_info.current_w
+		margin = (scrn_w - scrn_h)/2 #
 		
-		self.height = height
-		self.space_height = height/8
-		self.edge_dist = edge_dist
+		self.height = scrn_h
+		self.width = scrn_w
 		
-		self.rect = pygame.Rect(edge_dist, 0, height, height)
+		self.height = scrn_h
+		self.space_height = scrn_h/8
+		self.edge_dist = margin/10 # this is the distance from the edge of the board to the edge of the screen
+		
+		self.rect = pygame.Rect(margin, 0, scrn_h, scrn_h)
 		self.board = [[0 for x in range(9)] for y in range(9)]
 		
 		self.last_move = None
@@ -38,6 +41,16 @@ class Board():
 		self.checkmate = False
 		self.game_draw = False
 		self.pawn_promotion = False
+		
+		self.make_hist()
+		
+	def set_player_colors(self, plyr1_color):
+		if plyr1_color == "wh":
+			plyr2_color = "bl"
+		else: plyr2_color = "wh"
+		
+		self.plyr1_color = plyr1_color
+		self.plyr2_color = plyr2_color
 		
 	def set_players(self, plyr1, plyr2):
 		self.plyr1 = plyr1
@@ -54,7 +67,8 @@ class Board():
 			print("")
 		
 	# --------------------------------------------------------------------------------
-	def draw(self, screen):
+	# DRAW BOARD BACKGROUND
+	def draw_bg(self, screen):
 		colors = [(56,23,19), (249, 190, 102)]
 		current = 0
 		space_height = self.space_height
@@ -66,6 +80,17 @@ class Board():
 				y_distance = space_height * j
 				screen.fill(colors[current], pygame.Rect(x_distance,y_distance,space_height,space_height))
 				current += 1
+	
+	# INIT BACKGROUND SURFACE
+	def bg_init(self, wood):
+		background = pygame.Surface((self.height, self.height))
+		wood.set_alpha(150)
+		bgwood = pygame.transform.scale(wood, (self.height, self.height))
+		self.draw_bg(background)
+		background.blit(bgwood, (0,0))
+		self.screen.blit(background, (self.edge_dist, 0))
+		background = self.screen.copy()
+		self.set_background(background)
 	
 	# SET GROUPS for DRAWING
 	def set_groups(self, highlight, highlight_current, ui, all):
@@ -214,10 +239,10 @@ class Board():
 		plyr.gen_moves(self)
 		plyr.check_avoidance(self)
 		
-		if len(plyr.moves + plyr.takes) == 0 and self.is_check(plyr.color):
+		if len(plyr.moves) == 0 and self.is_check(plyr.color):
 			self.checkmate = plyr.color
 			return True
-		elif len(plyr.moves + plyr.takes) == 0:
+		elif len(plyr.moves) == 0:
 			self.game_draw = True
 			return True
 		else:
@@ -247,16 +272,16 @@ class Board():
 						white = opp
 					
 					if color == "wh":
-						for take in black.takes:	
-							if (ra, fi) == take[2:4]:
+						for move in black.moves:	
+							if (ra, fi) == move[2:4]:
 								self.wh_check = True
 								return True
 						
 						self.wh_check = False
 								
 					else:
-						for take in white.takes:	
-							if (ra, fi) == take[2:4]:
+						for move in white.moves:	
+							if (ra, fi) == move[2:4]:
 								self.bl_check = True
 								return True
 						self.bl_check = False
@@ -278,6 +303,46 @@ class Board():
 					return False
 
 					
+	# --------------------------------------------------------------------------------
+	def make_hist(self):
+		self.hist = []
+		# each piece move will append to history in the form of:
+		# [piece taken, [ra1.1, fi1.1, ra1.2, fi1.2], ([ra2.1, fi2.1, ra2.2, fi2.2], ... )]
+		# for all pieces moved as a result of that move
+		
+	def pop_hist(self):
+		end = len(self.hist) - 1
+		result = self.hist[end]
+		del self.hist[-1]
+		
+		return result
+		
+	def undo_move(self):
+		last_move = self.pop_hist()
+		
+		length = len(last_move) - 1
+		for i in range(length, 0, -1):
+			move = last_move[i]
+			has_moved, en_passant_able = move[4], move[5]
+			ra1, fi1, ra2, fi2 = move[0], move[1], move[2], move[3]
+			piece = self.get_piece(ra2, fi2)
+			
+			if piece == False:	
+				print(space_to_str(ra2, fi2))
+			
+			piece.has_moved = has_moved
+			piece.en_passant_able = en_passant_able
+			piece.ra = ra1
+			piece.fi = fi1
+			self.set_space(ra1, fi1, piece)
+			self.set_space(ra2, fi2, 0)
+			
+		taken_piece = last_move[0]
+		if taken_piece != 0:
+			self.set_space(taken_piece.ra, taken_piece.fi, taken_piece)
+		else: self.set_space(ra2, fi2, taken_piece)
+			
+		
 	# --------------------------------------------------------------------------------				
 	# checks if move is a valid move
 	def valid_move(self, ra1, fi1, ra2, fi2):
@@ -286,14 +351,11 @@ class Board():
 		if ((ra1, fi1, ra2, fi2) in self.moves):
 			return piece.valid_move(self, ra2, fi2)
 
-	def in_takes(self, ra1, fi1, ra2, fi2):
-		return ((ra1, fi1, ra2, fi2) in self.takes)
-		
 	def in_moves(self, ra1, fi1, ra2, fi2):
 		return ((ra1, fi1, ra2, fi2) in self.moves)
 	# --------------------------------------------------------------------------------	
 	def gen_moves(self):
-		self.plyr1.gen_moves(self)
+		self.plyr1.gen_player_moves(self)
 		self.plyr1.check_avoidance(self)
 	
 	def gen_opp_moves(self):
@@ -325,7 +387,6 @@ class Board():
 			return False
 			
 		# move piece
-		self.gen_moves()
 		if plyr.move_piece(self, ra1, fi1, ra2, fi2):
 			if ra2 == 1 and isinstance(self.get_piece(ra2, fi2), pieces.Pawn):
 				self.promote_pawn(ra2, fi2)
@@ -438,30 +499,37 @@ class Virtual_Board(Board):
 		self.plyr1_color = plyr1_color
 		self.wh_check = False
 		self.bl_check = False
+		self.space_height = 0
+		self.edge_dist = 0
 		
-	def make_piece(self, piece, ra, fi, color):
-		if piece == "":
-			piece = pieces.Pawn(ra, fi, color)
-		elif piece == "R":
-			piece = pieces.Rook(ra, fi, color)
-		elif piece == "N":
-			piece = pieces.Knight(ra, fi, color)
-		elif piece == "B":
-			piece = pieces.Bishop(ra, fi, color)
-		elif piece == "K":
-			piece = pieces.King(ra, fi, color)
-		elif piece == "Q":
-			piece = pieces.Queen(ra, fi, color)
-		piece.kill()
-		self.board[ra][fi] = piece
+		self.make_hist()
+		
+	def make_piece(self, piece, ra, fi):
+		shorthand = piece.shorthand
+		color = piece.color
+		if shorthand == "":
+			new_piece = pieces.Pawn(ra, fi, color)
+		elif shorthand == "R":
+			new_piece = pieces.Rook(ra, fi, color)
+		elif shorthand == "N":
+			new_piece = pieces.Knight(ra, fi, color)
+		elif shorthand == "B":
+			new_piece = pieces.Bishop(ra, fi, color)
+		elif shorthand == "K":
+			new_piece = pieces.King(ra, fi, color)
+		elif shorthand == "Q":
+			new_piece = pieces.Queen(ra, fi, color)
+		new_piece.kill()
+		new_piece.has_moved = piece.has_moved
+		new_piece.en_passant_able = piece.en_passant_able
+		self.board[ra][fi] = new_piece
 		
 	def copy_board(self, my_board):
 		for ra in range(1, 9):
 			for fi in range(1, 9):
 				piece = my_board.get_piece(ra, fi)
 				if piece:
-					shorthand = piece.shorthand
-					self.make_piece(shorthand, ra, fi, piece.color)
+					self.make_piece(piece, ra, fi)
 				else:
 					self.set_space(ra, fi, 0)
 					
@@ -472,19 +540,12 @@ class Virtual_Board(Board):
 				if piece:
 					piece.kill()
 		
-	def virt_move(self, moved_piece, temp_piece, ra1, fi1, ra2, fi2):
-		moved_piece.hasMoved = True
+	def virt_move(self, moved_piece, ra1, fi1, ra2, fi2):
+		moved_piece.has_moved = True
 		self.set_space(ra2, fi2, moved_piece)
 		moved_piece.ra = ra2
 		moved_piece.fi = fi2
 		self.set_space(ra1, fi1, 0)
-		
-	def virt_unmove(self, moved_piece, temp_piece, ra1, fi1, ra2, fi2):
-		moved_piece.ra = ra1
-		moved_piece.fi = fi1
-		self.set_space(ra1, fi1, moved_piece)
-		self.set_space(ra2, fi2, temp_piece)
-		if temp_piece != 0: temp_piece.valid = True
 		
 # SPRITE CLASSES FOR HIGHLIGHTING SPACES
 class Highlight(pygame.sprite.Sprite):

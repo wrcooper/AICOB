@@ -1,3 +1,7 @@
 Chess TODO:
 - Reorganize code, group helper functions
 - Fix AI en passant
+
+Issues:
+- AI does not consider pawn promotion
+- Castling is based on left and right, not king or queenside
