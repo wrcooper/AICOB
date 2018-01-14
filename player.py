@@ -58,7 +58,7 @@ class Player():
 			result = moved_piece.move(virt_board, ra2, fi2)
 			
 			my_board.plyr2.gen_moves(virt_board)
-			virt_board.update_check(self, my_board.plyr2)
+			virt_board.update_check(my_board.plyr1, my_board.plyr2)
 			
 			#print("Will take uncheck? " + str(not virt_board.is_check(self.color)))
 			
@@ -69,11 +69,14 @@ class Player():
 		
 		self.moves = checked_moves
 		
-	
 		my_board.plyr2.gen_moves(virt_board)
 	# --------------------------------------------------------------------------------
 	def valid_move(self, my_board, ra1, fi1, ra2, fi2):
+		print("Here1")
+		print(str(self.in_moves(ra1, fi1, ra2, fi2)))
 		self.gen_moves(my_board)
+		print("Here2")
+		print(str(self.in_moves(ra1, fi1, ra2, fi2)))
 		self.check_avoidance(my_board)
 		
 		piece = my_board.get_piece(ra1, fi1)
@@ -89,7 +92,7 @@ class Player():
 	# --------------------------------------------------------------------------------
 	def move_piece(self, my_board, ra1, fi1, ra2, fi2):
 		if my_board.update_checkmate(self):	return True
-			
+		
 		piece = my_board.get_piece(ra1, fi1)
 		
 		if not piece:

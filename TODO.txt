@@ -1,6 +1,6 @@
-Chess TODO:
-- Reorganize code, group helper functions
-- Fix AI en passant
+TODO:
+- Add UI settings
+- Add UI representation of checks and checkmate
 
 Issues:
 - AI does not consider pawn promotion

@@ -30,7 +30,7 @@ class Piece(pygame.sprite.Sprite):
 		
 	# --------------------------------------------------------------------------------
 	def load_image(n, height):
-		return (pygame.transform.scale(Piece.images[n], (int(height), int(height))))
+		return (pygame.transform.smoothscale(Piece.images[n], (int(height), int(height))))
 
 	# --------------------------------------------------------------------------------
 	def get_position(self):
@@ -477,6 +477,7 @@ class King(Piece):
 						self.moves.append((ra, fi))
 					elif not my_board.has_piece(ra, fi):
 						self.moves.append((ra, fi))
+						
 		castle = True
 		
 		if not self.has_moved and my_board.board[self.ra][1] != 0 and not my_board.board[self.ra][1].has_moved:
@@ -562,7 +563,7 @@ class King(Piece):
 			elif ra == self.ra and fi - self.fi == 2:
 				return "rcastle"
 			
-			else: 
+			else:
 				return True
 				
 		else: return False

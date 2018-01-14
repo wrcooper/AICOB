@@ -4,6 +4,8 @@ class UI(pygame.sprite.Sprite):
 	def __init__(self, screen_info, game, image):
 		pygame.sprite.Sprite.__init__(self, self.containers)
 		
+		self.main_menu = True
+		
 		self.elements = []
 		
 		self.screen_w = screen_info.current_w
@@ -28,23 +30,43 @@ class UI(pygame.sprite.Sprite):
 
 		self.image = s
 		
-		
 		self.game = game
 		self.update_game_info(self.game)
 		
-	"""
 	def clicked(self, click):
+		print("click!")
 		if (click.pos[0] > self.start_x and click.pos[0] < self.end_x and click.pos[1] > 0):	
 			for element in self.elements:
 				element.clicked(click)
-	"""			
+
+	def get_font(self, size):
+		font = pygame.font.Font(None, size)
+		return font
 
 	def update_game_info(self, game):
 		self.current_move = game.current_move
 		self.turn_number = game.turn_number
 		self.player_color = game.player_color
 		self.pgn = game.pgn
-				
+		
+	def open_settings_page(self):
+		self.main_menu = False
+		self.settings = True
+		self.remove_elements()
+		self.init_settings()
+		
+	def remove_elements(self):
+		for element in self.elements:
+			element.kill()
+		self.elements = []
+			
+	def change_depth(self, inc):
+		print(self.game.depth)
+		print(inc)
+		self.game.depth += inc
+		if self.game.depth < 1:
+			self.game.depth = 1
+		
 	def init_game_interface(self):
 		self.turn_number = Turn_Number(self)
 		self.to_move = To_Move(self)
@@ -57,19 +79,21 @@ class UI(pygame.sprite.Sprite):
 		
 		self.elements = [self.turn_number, self.to_move, self.player_name, self.player_color, 
 			self.new_game_button, self.settings, self.pgn, self.chat]
+	
+	def init_settings(self):
+		self.settings_page = Settings_Page(self)
+		self.elements.append(self.settings_page)
 			
 	def update_interface(self):
-		for element in self.elements:
-			element.kill()
+		self.remove_elements()
+		
 		self.update_game_info(self.game)
-		self.init_game_interface()
+		if self.main_menu: self.init_game_interface()
+		elif self.settings: self.init_settings()
 		
 	def open_pawn_promotion(self, color, my_board):
 		self.pawn_prom = Pawn_Promotion(self, color, my_board)
 		self.elements.append(self.pawn_prom)
-		
-	def init_settings_interface(self):
-		print("blah")
 		
 	def init_ai_interface(self):
 		print("blee")
@@ -92,10 +116,14 @@ class Element(pygame.sprite.Sprite):
 		centered = False
 		self.dimensions()
 		self.centered()
+		self.set_border()
+		
+		self.parent = parent
 		
 		self.width = int((self.w_percent * parent.rect_w) / 100)
 		self.height = int((self.h_percent * parent.screen_h) / 100)
 		
+		self.stroke = 10
 		
 		if (self.centered):	
 			x = parent.start_x + int((parent.rect_w - self.width)/2)
@@ -106,10 +134,23 @@ class Element(pygame.sprite.Sprite):
 		
 		self.rect = pygame.Rect(x, y, self.width, self.height)
 		
-		s = pygame.Surface((self.width, self.height))
-		s.fill((255,255,255))
+		if self.border:
+			s = pygame.Surface((self.width, self.height))
+			b = pygame.Surface((self.width - self.stroke, self.height - self.stroke))
+			
+			s.fill((0,0,0))
+			b.fill((255,255,255))
+			
+			s.blit(b, (self.stroke/2, self.stroke/2))
+			
+		else:
+			s = pygame.Surface((self.width, self.height))
+			s.fill((255,255,255))
 		
 		self.image = s
+		
+	def set_border(self, setting = True):
+		self.border = setting
 	
 	def dimensions(self):
 		self.w_percent = 0
@@ -120,18 +161,19 @@ class Element(pygame.sprite.Sprite):
 	def centered(self):
 		self.centered = False
 	
-	def onClick(self):
-		self.click_function()
+	def clicked(self, click):
+		if (click.pos[0] > self.rect.x and click.pos[0] < self.rect.x + self.rect.w and click.pos[1] < self.rect.y + self.rect.h and click.pos[1] > self.rect.y):	
+			self.click_function()
 	
 	def click_function(self):
-		print("Error: uninitialized element")
+		print(str(self))
 		
 
 	
 class Turn_Number(Element):
 	def __init__(self, parent):
 		Element.__init__(self, parent)
-		font = pygame.font.Font(None, 50)
+		font = parent.get_font(50)
 		text = "Turn Number: " + str(parent.turn_number)
 		s = font.render(text, True, (0, 0, 0))
 		
@@ -150,7 +192,7 @@ class Turn_Number(Element):
 class To_Move(Element):
 	def __init__(self, parent):
 		Element.__init__(self, parent)
-		font = pygame.font.Font(None, 50)
+		font = parent.get_font(50)
 		move = UI.color_to_str(parent.current_move)
 		text = "To Move: " + move
 		s = font.render(text, True, (0, 0, 0))
@@ -170,7 +212,7 @@ class To_Move(Element):
 class Player_Name(Element):
 	def __init__(self, parent):
 		Element.__init__(self, parent)
-		font = pygame.font.Font(None, 50)
+		font = parent.get_font(50)
 		text = "Player: player"
 		s = font.render(text, True, (0, 0, 0))
 		
@@ -189,7 +231,7 @@ class Player_Name(Element):
 class Player_Color(Element):
 	def __init__(self, parent):
 		Element.__init__(self, parent)
-		font = pygame.font.Font(None, 50)
+		font = parent.get_font(40)
 		text = "Player Color: " + UI.color_to_str(parent.player_color)
 		s = font.render(text, True, (0, 0, 0))
 		
@@ -209,7 +251,7 @@ class Player_Color(Element):
 class New_Game_Button(Element):
 	def __init__(self, parent):
 		Element.__init__(self, parent)
-		font = pygame.font.Font(None, 60)
+		font = parent.get_font(60)
 		text = "New Game"
 		s = font.render(text, True, (0, 0, 0))
 		
@@ -218,6 +260,9 @@ class New_Game_Button(Element):
 		top_border = (self.height - size[1])/2		
 		
 		self.image.blit(s, (left_border, top_border))
+		
+	def click_function(self):
+		self.parent.game.new_game()
 	
 	def dimensions(self):
 		self.w_percent = 94
@@ -231,7 +276,7 @@ class New_Game_Button(Element):
 class Settings(Element):
 	def __init__(self, parent):
 		Element.__init__(self, parent)
-		font = pygame.font.Font(None, 60)
+		font = parent.get_font(60)
 		text = "Settings"
 		s = font.render(text, True, (0, 0, 0))
 		
@@ -240,6 +285,9 @@ class Settings(Element):
 		top_border = (self.height - size[1])/2		
 		
 		self.image.blit(s, (left_border, top_border))
+		
+	def click_function(self):
+		self.parent.open_settings_page()
 	
 	def dimensions(self):
 		self.w_percent = 94
@@ -250,10 +298,124 @@ class Settings(Element):
 	def centered(self):
 		self.centered = True
 		
+# Settings --------------------------------------------------------------------------------
+		
+class Settings_Page(Element):
+	def __init__(self, parent):
+		Element.__init__(self, parent)
+		depth_selector = AI_Depth_Selector(parent)
+		back_button = Back_Button(parent)
+		player_select = Player_Select(parent)
+		
+		parent.elements.append(depth_selector)
+		parent.elements.append(back_button)
+		parent.elements.append(player_select)
+	
+	def dimensions(self):
+		self.w_percent = 94
+		self.h_percent = 95
+		self.x_percent = 0
+		self.y_percent = 0
+		
+class Back_Button(Element):
+	def __init__(self, parent):
+		Element.__init__(self, parent)
+		font = parent.get_font(40)
+		text = "Back"
+		s = font.render(text, True, (0,0,0))
+		self.image.blit(s, (self.stroke, self.stroke))
+		
+	def click_function(self):
+		self.parent.main_menu = True
+		
+	def dimensions(self):
+		self.w_percent = 15
+		self.h_percent = 4
+		self.x_percent = 5
+		self.y_percent = 2.5
+		
+class AI_Depth_Selector(Element):
+	def __init__(self, parent):
+		Element.__init__(self, parent)
+		font = parent.get_font(50)
+		smallfont = parent.get_font(20)
+		text = "AI Move Algorithm Depth: " 
+		note = "(default: 3, any more than 3 will result in ridiculous processing time!)"
+		s = font.render(text, True, (0,0,0))
+		
+		size = font.size(text)
+		
+		self.arrow_w = 60
+		self.arrow_h = 60
+		
+		depth = str(parent.game.depth)
+		depth_s = font.render(depth, True, (0,0,0))
+		depth_size = font.size(depth)
+		
+		note_s = smallfont.render(note, True, (0,0,0))
+		note_size = smallfont.size(note)
+		
+		left_arrow = pygame.transform.smoothscale(parent.images[0], (self.arrow_w, self.arrow_h))
+		right_arrow = pygame.transform.smoothscale(parent.images[1], (self.arrow_w, self.arrow_h))
+		
+		middle_x = int(self.rect.w * .5)
+		
+		self.image.blit(s, (self.stroke + 15, self.stroke))
+		self.image.blit(left_arrow, (30, size[1] + 10))
+		self.image.blit(depth_s, (middle_x - depth_size[0], size[1] + 25))
+		self.image.blit(right_arrow, (self.rect.w - (30 + self.arrow_w), size[1] + 10))
+		self.image.blit(note_s, (middle_x - (note_size[0])/2, 3 * size[1] + 10))
+		
+		
+		self.left_arrow_x = self.rect.x + 30
+		self.left_arrow_y = self.rect.y + size[1] + 10
+		
+		self.right_arrow_x = self.rect.x + (self.rect.w - (30 + self.arrow_w))
+		self.right_arrow_y = self.rect.y + size[1] + 10
+	
+	def clicked(self, click):
+		if (click.pos[0] > self.rect.x and click.pos[0] < self.rect.x + self.rect.w and click.pos[1] < self.rect.y + self.rect.h and click.pos[1] > self.rect.y):	
+			self.left_arrow_clicked(click)
+			self.right_arrow_clicked(click)
+
+	def left_arrow_clicked(self, click):
+		x = click.pos[0]
+		y = click.pos[1]
+		if (x > self.left_arrow_x and x < self.left_arrow_x + self.arrow_w and y > self.left_arrow_y and y < self.left_arrow_y + self.arrow_w):
+			self.parent.change_depth(-1)
+	
+	def right_arrow_clicked(self, click):
+		x = click.pos[0]
+		y = click.pos[1]
+		if (x > self.right_arrow_x and x < self.right_arrow_x + self.arrow_w and y > self.right_arrow_y and y < self.right_arrow_y + self.arrow_w):
+			self.parent.change_depth(1)	
+		
+	
+	def dimensions(self):
+		self.w_percent = 80
+		self.h_percent = 12
+		self.x_percent = 7.5
+		self.y_percent = 8
+		
+class Player_Select(Element):
+	def __init__(self, parent):
+		Element.__init__(self, parent)
+		font = parent.get_font(50)
+		player_text = "Player 2: " + parent.game.player2
+		
+	def dimensions(self):
+		self.w_percent = 80
+		self.h_percent = 12
+		self.x_percent = 7.5
+		self.y_percent = 21
+		
+		
+# End Settings --------------------------------------------------------------------------------		
+
 class PGN(Element):
 	def __init__(self, parent):
 		Element.__init__(self, parent)
-		font = pygame.font.Font(None, 40)
+		font = parent.get_font(40)
 		text = "PGN: " + parent.pgn
 		
 		words = text.split(' ')
@@ -284,7 +446,7 @@ class PGN(Element):
 class Chat(Element):
 	def __init__(self, parent):
 		Element.__init__(self, parent)
-		font = pygame.font.Font(None, 40)
+		font = parent.get_font(40)
 		text = "Chat"
 		s = font.render(text, True, (0, 0, 0))
 		

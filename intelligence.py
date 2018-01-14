@@ -145,7 +145,7 @@ class Intelligence():
 			result = moved_piece.move(virt_board, ra2, fi2)
 			
 			my_board.plyr1.gen_moves(virt_board)
-			virt_board.update_check(self, my_board.plyr2)
+			virt_board.update_check(my_board.plyr1, my_board.plyr2)
 			
 			#print("Will take uncheck? " + str(not virt_board.is_check(self.color)))
 			
@@ -155,10 +155,11 @@ class Intelligence():
 			virt_board.undo_move()
 		
 		self.moves = checked_moves
-		
 	
 		my_board.plyr1.gen_moves(virt_board)
-		
+	
+	def update_depth(self, my_game):
+		self.depth = my_game.depth
 		
 	# --------------------------------------------------------------------------------
 	def decide(self, my_board):
@@ -166,7 +167,7 @@ class Intelligence():
 		virt_board.copy_board(my_board)
 		virt_board.set_players(my_board.plyr1, self)
 		
-		decision = self.minimax(virt_board, 3, float('-inf'), float('inf'), True)
+		decision = self.minimax(virt_board, self.depth, float('-inf'), float('inf'), True)
 		# print("Decision value is " + str(decision))
 		virt_board.kill()
 		return self.best_move
@@ -204,23 +205,6 @@ class Intelligence():
 				
 				result = moved_piece.move(my_board, ra2, fi2)
 				
-				# make the move
-				
-				# if moved_piece == False:	
-					# print(ra1, fi1)
-				
-				# print("my move? " + str(result))
-				
-				# if result == False:
-					# print((ra2, fi2) in moved_piece.moves)
-				
-				# print("My " + str(moved_piece))
-				# print("value: " + str(self.score_board(my_board)) + "\n")
-					
-				# print(board.Board.file_[fi1]+ board.Board.rank_[ra1] + " to: " + board.Board.file_[fi2] + board.Board.rank_[ra2])
-
-				# my_board.print_board()
-				
 				# make move for opponent
 				value = max(best_value, self.minimax(my_board, depth-1, alpha, beta, False))
 				
@@ -228,7 +212,7 @@ class Intelligence():
 				
 				if value > best_value: 
 					best_value = value
-					if depth == 3: self.best_move = move
+					if depth == self.depth: self.best_move = move
 					
 				my_board.undo_move()
 				
@@ -256,19 +240,9 @@ class Intelligence():
 				
 				moved_piece = my_board.get_piece(ra1, fi1)
 				
+				moved_piece.gen_moves(my_board)
+				
 				result = moved_piece.move(my_board, ra2, fi2)
-				
-				# print("Your " + str(moved_piece))
-				
-				# if result == False:
-					# print((ra2, fi2) in moved_piece.moves)
-				# print("player move? " + str(result))
-				
-				
-				# print("value: " + str(self.score_board(my_board)) + "\n")
-				# print(board.Board.file_[fi1]+ board.Board.rank_[ra1] + " to: " + board.Board.file_[fi2] + board.Board.rank_[ra2])
-
-				# my_board.print_board()
 				
 				value = min(best_value, self.minimax(my_board, depth-1, alpha, beta, True))
 				
@@ -308,7 +282,7 @@ class Intelligence():
 		score += 30 * (my_pieces[pieces.Piece.KNGH] - plyr_pieces[pieces.Piece.KNGH])
 		score += 30 * (my_pieces[pieces.Piece.BSHP] - plyr_pieces[pieces.Piece.BSHP])
 		score += 10 * (my_pieces[pieces.Piece.PAWN] - plyr_pieces[pieces.Piece.PAWN])
-		score += 1 * (len(self.moves) - len(my_board.plyr1.moves))
+		score += 0.8 * (len(self.moves) - len(my_board.plyr1.moves))
 		
 		return score
 					
@@ -323,14 +297,16 @@ class Intelligence():
 	# --------------------------------------------------------------------------------
 	# CHOOSE an OPTIMAL MOVE and MAKE IT
 	def move(self, my_board, my_game):
+		print("Is AI checked? " + str(my_board.is_check(self.color)))
+		self.update_depth(my_game)
+	
 		# UPDATE CHECKMATE and DRAW
-		self.gen_moves(my_board)
-		self.check_avoidance(my_board)
+		my_board.update_check(my_board.plyr1, self)
+		my_board.update_checkmate(self)
 		
 		possible = self.moves
 		
 		if len(possible) == 0 and my_board.is_check(self.color):
-			print("Is AI checked? " + str(my_board.is_check(self.color)))
 			my_board.checkmate = self.color
 			return True
 		elif len(possible) == 0:
@@ -340,7 +316,6 @@ class Intelligence():
 		# PICK a RANDOM MOVE, if choosing randomly
 		random.seed()
 		i = int(random.uniform(0, len(possible) - 1))
-	
 		
 		# PICK an OPTIMAL MOVE
 		move = self.decide(my_board)
@@ -355,15 +330,16 @@ class Intelligence():
 		print(board.move_to_str(move))
 		self.ai_move(my_board, move[0], move[1], move[2], move[3])				
 		self.check_promote(my_board, move[2], move[3])
-		my_game.next_move(my_board)
+		my_game.next_move()
 	
 		"""
 		print(self.score_board(my_board))
 		
 		self.ai_move(my_board, possible[i][0], possible[i][1], possible[i][2], possible[i][3])				
 		self.check_promote(my_board, possible[i][2], possible[i][3])
-		my_game.next_move(my_board)	
+		my_game.next_move()	
 		"""	
+	
 		
 		#for move in possible:
 			# another = self.imagine(this_move, depth + 1)

@@ -1,4 +1,15 @@
 rect_w = 612.0 start_x = 1272.0
+click!
+Here1
+False
+Here2
+False
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
 Current board before moving: 
 RNBKQBNR
 PPPPPPPP
@@ -9,38 +20,348 @@ xxxxxxxx
 PPPxPPPP
 RNBKQBNR
 AI moving
-e7 to: e5
+b8 to: c6
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
 Current board before moving: 
-RNBKQBNR
-PPPPxPPP
+RxBKQBNR
+PPPPPPPP
+xxNxxxxx
 xxxxxxxx
-xxxxPxxx
 xxxPxxxx
 xxxxPxxx
 PPPxxPPP
 RNBKQBNR
 AI moving
-e8 to: e6
+e7 to: e6
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
 Current board before moving: 
-RNBKxBNR
+RxBKQBNR
 PPPPxPPP
-xxxxQxxx
+xxNxPxxx
+xxxxxxxx
+xxPPxxxx
 xxxxPxxx
-xxxPxxxx
-xPxxPxxx
-PxPxxPPP
+PPxxxPPP
 RNBKQBNR
 AI moving
-e5 to: d4
+f8 to: b4
+click!
+Here1
+False
+Here2
+False
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
 Current board before moving: 
-RNBKxBNR
+RxBKQxNR
 PPPPxPPP
-xxxxQxxx
+xxNxPxxx
 xxxxxxxx
-xxBPxxxx
-xPxxPxxx
-PxPxxPPP
-RNBKQxNR
+xBPPxxxx
+xxxxPxxx
+PPxBxPPP
+RNxKQBNR
 AI moving
-d7 to: d5
-1. d4 e5 2. e3 Qe6 3. b3 d4 4. Bc4 d5 
+b4 to: d6
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
+Current board before moving: 
+RxBKQxNR
+PPPPxPPP
+xxNBPxxx
+xxxxxxxx
+xBPPxxxx
+xxxxPxxx
+PPxxxPPP
+RNxKQBNR
+AI moving
+d6 to: b4
+click!
+Here1
+False
+Here2
+False
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
+Current board before moving: 
+RxBKQxNR
+PPPPxPPP
+xxNxPxxx
+xxxxxxxx
+xBPPxxxx
+xxxxPxxx
+PPxNxPPP
+RxxKQBNR
+AI moving
+f7 to: f5
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
+Current board before moving: 
+RxBKQxNR
+PPPPxxPP
+xxNxPxxx
+xxxxxPxx
+xBPPPxxx
+xxxxxxxx
+PPxNxPPP
+RxxKQBNR
+AI moving
+e8 to: h5
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
+Current board before moving: 
+RxBKxxNR
+PPPPxxPP
+xxNxPxxx
+xxxxxPxQ
+xBPPPxxx
+xxxxxPxx
+PPxNxxPP
+RxxKQBNR
+AI moving
+c6 to: d4
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
+Current board before moving: 
+RxBKxxNR
+PPPPxxPP
+xxxxPxxx
+xxxxxPxQ
+xBPNPxxx
+xxxxxPxx
+PPxNxQPP
+RxxKxBNR
+AI moving
+e6 to: e5
+click!
+Here1
+False
+Here2
+False
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
+Current board before moving: 
+RxBKxxNR
+PPPPxxPP
+xxxxxxxx
+xxxxPPxQ
+xBPNPxxx
+PxxxxPxx
+xPxNxQPP
+RxxKxBNR
+AI moving
+b4 to: a5
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
+Current board before moving: 
+RxBKxxNR
+PPPPxxPP
+xxxxxxxx
+BxxxPPxQ
+xPPNPxxx
+PxxxxPxx
+xxxNxQPP
+RxxKxBNR
+AI moving
+h5 to: h6
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
+Current board before moving: 
+RxBKxxNR
+PPPPxxPP
+xxxxxxxQ
+PxxxPPxx
+xxPNPxxx
+PxxxxPxx
+xxxNxQPP
+RxxKxBNR
+AI moving
+g8 to: e7
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
+Current board before moving: 
+RxBKxxxR
+PPPPNxPP
+xxxxxxxQ
+PxxxPPxx
+xxPNPxxx
+PxxBxPxx
+xxxNxQPP
+RxxKxxNR
+AI moving
+h8 to: f8
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
+Current board before moving: 
+RxBKxRxx
+PPPPNxPP
+xxxxxxxQ
+PxxxPPxx
+xxPNxxxx
+PxxBxPxx
+xxxNxQPP
+RxxKxxNR
+AI moving
+h6 to: f4
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
+Current board before moving: 
+RxBKxRxx
+PPPPNxPP
+xxxxxxxx
+PxxxPPxx
+xxPNxQxx
+PxxBxPPx
+xxxNxQxP
+RxxKxxNR
+AI moving
+f4 to: h6
+click!
+Here1
+False
+Here2
+False
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
+Current board before moving: 
+RxBKxRxx
+PPPPNxPP
+xxxxxxxQ
+PxxxPPxx
+xxPNNxxx
+PxxBxPPx
+xxxxxQxP
+RxxKxxNR
+AI moving
+f8 to: f5
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
+Current board before moving: 
+RxBKxxxx
+PPPPNxPP
+xxxxxxxQ
+PxxxPRxx
+xxPNNxPx
+PxxBxPxx
+xxxxxQxP
+RxxKxxNR
+AI moving
+f5 to: f8
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
+Current board before moving: 
+RxBKxRxx
+PPPPNxPP
+xxxxxxxQ
+PxxxPxPx
+xxPNNxxx
+PxxBxPxx
+xxxxxQxP
+RxxKxxNR
+AI moving
+h6 to: g6
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
+Current board before moving: 
+RxBKxRxx
+PPPPNxPP
+xxxxxxQx
+PxxxPxPx
+xxPNNxxQ
+PxxBxPxx
+xxxxxxxP
+RxxKxxNR
+AI moving
+f8 to: f4
+click!
+Here1
+True
+Here2
+True
+Is AI checked? False
+Current board before moving: 
+RxBKxxxx
+PPPPNxPQ
+xxxxxxQx
+PxxxPxPx
+xxPNNRxx
+PxxBxPxx
+xxxxxxxP
+RxxKxxNR
+AI moving
+g6 to: h7
+1. d4 Nc6 2. e3 e6 3. c4 Bb4 4. Bd2 Bd6 5. Bb4 Bxb4 6. Nd2 f5 7. e4 Qh5+ 8. f3 Nxd4 9. Qf2 e5 10. a3 Ba5 11. b4 Qh6 12. a5 Ne7 13. Bd3 Rf8 14. f5 Qf4 15. g3 Qh6 16. Ne4 Rxf5 17. g4 Rf8 18. g5 Qg6 19. Qh4 Rf4 20. Qxh7 Qxh7 

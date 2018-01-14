@@ -30,8 +30,8 @@ class Board():
 		self.edge_dist = margin/10 # this is the distance from the edge of the board to the edge of the screen
 		
 		self.rect = pygame.Rect(margin, 0, scrn_h, scrn_h)
-		self.board = [[0 for x in range(9)] for y in range(9)]
 		
+		self.board = [[0 for x in range(9)] for y in range(9)]
 		self.last_move = None
 		self.turn = 0
 		
@@ -65,6 +65,14 @@ class Board():
 				elif piece != 0: print(piece.shorthand, end='')
 				else: print("x", end = '')
 			print("")
+			
+	def print_moves(self):
+		for ra in range(9):
+			for fi in range(9):
+				piece = self.get_piece(ra, fi)
+				if piece != 0:
+					print(piece.color + " " + str(piece) + " at " + space_to_str(ra, fi) + ":")
+					print("moves: " + str(piece.moves) + "\n")
 		
 	# --------------------------------------------------------------------------------
 	# DRAW BOARD BACKGROUND
@@ -157,6 +165,15 @@ class Board():
 	# --------------------------------------------------------------------------------
 	# INITIAL STATE of BOARD
 	def init_pieces(self, color1):
+		for ra in range(9):
+			for fi in range(9):
+				piece = self.get_piece(ra, fi)
+				if piece != 0:
+					print(str(piece))
+					piece.kill()
+					
+		self.board = [[0 for x in range(9)] for y in range(9)]
+		
 		if color1 == "wh":
 			color2 = "bl"
 		else:
@@ -262,7 +279,6 @@ class Board():
 				if isinstance(self.board[ra][fi], pieces.King):
 					piece = self.board[ra][fi]
 					color = piece.color
-					
 					
 					if self.plyr1_color == "wh":
 						white = plyr
@@ -381,6 +397,7 @@ class Board():
 
 	def piece_released(self, my_game, plyr, opp, ra1, fi1, ra2, fi2):
 		piece = self.get_piece(ra1, fi1)
+		#self.print_moves()
 		
 		# checking valid move
 		if piece == 0 or piece.color != plyr.color or piece.color != my_game.current_move:
@@ -395,14 +412,15 @@ class Board():
 			
 			if self.update_checkmate(self.plyr2):
 				self.last_move = self.last_move + "#"
-				my_game.next_move(self)
+				my_game.next_move()
 				return True
 			
 			if self.is_check(opp.color):
 				self.last_move = self.last_move + "+"
 				
 			self.gen_opp_moves()
-			my_game.next_move(self)
+			my_game.next_move()
+				
 		else:
 			self.piece_reset(ra1, fi1)
 		if not self.next_highlight == False:

@@ -35,8 +35,7 @@ def print_sequence(sequence):
 		if i % 2 == 0:
 			print(str(int(i/2 + 1)) + ".", end=" ")
 		print(sequence[i], end=" ") 
-
-
+		
 def main():
 	# --------------------------------------------------------------------------------
 	# initialize display
@@ -57,6 +56,13 @@ def main():
 	for image in images:
 		loaded_images.append(load_image(image))
 	pieces.Piece.images = loaded_images
+	
+	ui_images = ["left_arrow_button.png", "right_arrow_button.png"]
+	
+	loaded_ui_images = []
+	for image in ui_images:
+		loaded_ui_images.append(load_image(image))
+	UI.UI.images = loaded_ui_images
 
 	# --------------------------------------------------------------------------------
 	# initialize game groups
@@ -88,6 +94,7 @@ def main():
 	# init game and clock
 	my_clock = pygame.time.Clock()
 	my_game = game.Game(plyr1_color)
+	my_game.set_board(my_board)
 
 	# --------------------------------------------------------------------------------
 	# initialize UI
@@ -119,6 +126,12 @@ def main():
 
 	while(True):
 		
+		# IF BLACK'S MOVE, MAKE MOVE
+		if my_game.current_move == "bl":
+			opp.move(my_board, my_game)
+			my_board.plyr1.gen_moves(my_board)
+			interface.update_interface()
+		
 		# LIMIT FRAMERATE to 60
 		my_clock.tick(60)
 	
@@ -146,6 +159,7 @@ def main():
 		# RELEASE PIECE IF RELEASED, ATTEMPT MOVE
 		if newRelease:
 			newRelease = False
+			interface.clicked(lastRelease)
 				
 			if piece_held and my_board.within(lastRelease):
 				ra2 = my_board.y_to_rank(lastRelease.pos[1])
@@ -160,12 +174,6 @@ def main():
 				my_board.piece_reset(ra1, fi1)
 				piece_held = False
 					
-			interface.update_interface()
-		
-		# IF BLACK'S MOVE, MAKE MOVE
-		if my_game.current_move == "bl":
-			opp.move(my_board, my_game)
-			my_board.plyr1.gen_moves(my_board)
 			interface.update_interface()
 		
 		# IF CHECKMATED, END GAME

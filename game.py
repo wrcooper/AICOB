@@ -7,11 +7,14 @@ class Game():
 		self.player_color = player_color
 		self.current_move = "wh"
 		self.pgn = ""
+		self.depth = 3
+		
+		self.player2 = "Computer"
+		self.player1 = "Human"
 
 	# BEGIN the NEXT MOVE of the game
-	def next_move(self, my_board):
-		self.my_board = my_board
-		self.sequence.append(my_board.last_move)
+	def next_move(self):
+		self.sequence.append(self.my_board.last_move)
 		if self.current_move == "wh":
 			self.current_move = "bl"
 			
@@ -33,6 +36,16 @@ class Game():
 				if isinstance(piece, pieces.Pawn):	
 					if piece.color == self.current_move:
 						piece.en_passant_able = False
+						
+	def set_board(self, my_board):
+		self.my_board = my_board
+		
+	def new_game(self):
+		self.pgn = ""
+		self.sequence = [] 
+		self.turn_number = 1
+		self.my_board.init_pieces("wh")
+		self.current_move = "wh"
 
 	# INCREMENT TURN NUMBER
 	def next_turn(self):
