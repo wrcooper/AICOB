@@ -14,6 +14,12 @@ class Game():
 
 	# BEGIN the NEXT MOVE of the game
 	def next_move(self):
+		if self.check_end():
+			return
+		
+		self.my_board.checkmate = "bl"
+		self.end_game()
+	
 		self.sequence.append(self.my_board.last_move)
 		if self.current_move == "wh":
 			self.current_move = "bl"
@@ -36,6 +42,20 @@ class Game():
 				if isinstance(piece, pieces.Pawn):	
 					if piece.color == self.current_move:
 						piece.en_passant_able = False
+						
+	def check_end(self):
+		if self.my_board.checkmate != False:
+			self.end_game()
+			return True
+			
+	def end_game(self):
+		self.current_move = None
+		if self.my_board.checkmate == "wh":
+			self.winner = "Black"
+			self.my_board.open_end_game((0,0,0))
+		else:
+			self.winner = "White"
+			self.my_board.open_end_game((255,255,255))
 						
 	def set_board(self, my_board):
 		self.my_board = my_board

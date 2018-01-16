@@ -69,7 +69,7 @@ def main():
 	piece_group = pygame.sprite.Group()
 	highlight = pygame.sprite.GroupSingle()
 	highlight_current = pygame.sprite.GroupSingle()
-	ui = pygame.sprite.Group()
+	ui = pygame.sprite.LayeredUpdates()
 	all = pygame.sprite.LayeredUpdates()
 
 	# --------------------------------------------------------------------------------
@@ -161,7 +161,7 @@ def main():
 			newRelease = False
 			interface.clicked(lastRelease)
 				
-			if piece_held and my_board.within(lastRelease):
+			if piece_held and my_board.within(lastRelease) and my_game.current_move == plyr.color:
 				ra2 = my_board.y_to_rank(lastRelease.pos[1])
 				fi2 = my_board.x_to_file(lastRelease.pos[0])
 					

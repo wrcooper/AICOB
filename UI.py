@@ -5,6 +5,7 @@ class UI(pygame.sprite.Sprite):
 		pygame.sprite.Sprite.__init__(self, self.containers)
 		
 		self.main_menu = True
+		self.game_end = False
 		
 		self.elements = []
 		
@@ -88,15 +89,20 @@ class UI(pygame.sprite.Sprite):
 		self.remove_elements()
 		
 		self.update_game_info(self.game)
-		if self.main_menu: self.init_game_interface()
+		if self.main_menu: 
+			self.init_game_interface()
 		elif self.settings: self.init_settings()
+		
+		
+		if self.game_end: self.open_end_game()
 		
 	def open_pawn_promotion(self, color, my_board):
 		self.pawn_prom = Pawn_Promotion(self, color, my_board)
 		self.elements.append(self.pawn_prom)
 		
-	def init_ai_interface(self):
-		print("blee")
+	def open_end_game(self):
+		self.end_game = End_Game(self)
+		self.elements.append(self.end_game)
 		
 	def select_promotion(self, mouse):
 		if self.pawn_prom is not None:
@@ -329,7 +335,7 @@ class Back_Button(Element):
 		self.parent.main_menu = True
 		
 	def dimensions(self):
-		self.w_percent = 15
+		self.w_percent = 12.5
 		self.h_percent = 4
 		self.x_percent = 5
 		self.y_percent = 2.5
@@ -341,7 +347,7 @@ class AI_Depth_Selector(Element):
 		smallfont = parent.get_font(20)
 		text = "AI Move Algorithm Depth: " 
 		note = "(default: 3, any more than 3 will result in ridiculous processing time!)"
-		s = font.render(text, True, (0,0,0))
+		title_s = font.render(text, True, (0,0,0))
 		
 		size = font.size(text)
 		
@@ -360,11 +366,13 @@ class AI_Depth_Selector(Element):
 		
 		middle_x = int(self.rect.w * .5)
 		
-		self.image.blit(s, (self.stroke + 15, self.stroke))
+		title_offset = middle_x-(size[0]/2)
+		
+		self.image.blit(title_s, (self.stroke + title_offset, self.stroke))
 		self.image.blit(left_arrow, (30, size[1] + 10))
 		self.image.blit(depth_s, (middle_x - depth_size[0], size[1] + 25))
 		self.image.blit(right_arrow, (self.rect.w - (30 + self.arrow_w), size[1] + 10))
-		self.image.blit(note_s, (middle_x - (note_size[0])/2, 3 * size[1] + 10))
+		self.image.blit(note_s, (middle_x - (note_size[0])/2, 3 * size[1]))
 		
 		
 		self.left_arrow_x = self.rect.x + 30
@@ -465,6 +473,99 @@ class Chat(Element):
 	def centered(self):
 		self.centered = True
 		
+class End_Game(Element):
+	def __init__(self, parent):
+		pygame.sprite.Sprite.__init__(self, self.containers)
+		
+		self.parent = parent
+		
+		end_text = parent.game.winner + " has won!!"
+		font = parent.get_font(80)
+		text_size = font.size(end_text)
+		text_surf = font.render(end_text, True, (0,0,0))
+		
+		self.dimensions()
+		self.inner_dimensions()
+		
+		outer_w = parent.screen_h * self.w_percent / 100
+		outer_h = parent.screen_h * self.h_percent / 100
+		outer_x = (parent.screen_h - outer_w) / 2 + parent.edge_dist
+		outer_y = (parent.screen_h - outer_h) / 2
+		
+		self.start_x = outer_x
+		self.start_y = outer_y
+		
+		self.rect = pygame.Rect(outer_x, outer_y, outer_w, outer_h)
+		outer = pygame.Surface((outer_w, outer_h))
+		outer.fill((0, 0, 0))
+		
+		self.inner_w = parent.screen_h * self.inner_w_percent / 100
+		self.inner_h = parent.screen_h * self.inner_h_percent / 100
+		
+		inner = pygame.Surface((self.inner_w, self.inner_h))
+		inner.fill((255, 255, 255))
+		
+		inner.blit(text_surf, ((self.inner_w - text_size[0])/2, (self.inner_h - text_size[1])/2))
+		
+		self.inner_x = (outer_w - self.inner_w) / 2
+		self.inner_y = (outer_h - self.inner_h) / 2
+		
+		outer.blit(inner, (self.inner_x, self.inner_y))
+		
+		self.image = outer
+		
+	def animate(self, my_board, scrn, color):
+		radius = 50
+		scale = 1
+		dscale = 0.8
+		
+		my_board.update()
+		
+		Circle.containers = self.parent.containers
+		background = scrn.copy()
+		width = 40
+	
+		for i in range(200):
+			if 5 * radius > self.parent.screen_h:
+				width -= 2
+				if width < 1: width = 1
+		
+			circle = Circle(int(radius), color, self.parent, width)
+			self.parent.containers.move_to_front(circle)
+			self.parent.containers.move_to_front(self)
+			my_board.interface_group.clear(scrn, background)
+			my_board.interface_group.draw(scrn)
+			pygame.display.update()
+			
+			circle.kill()
+			radius += scale
+			scale += dscale
+			
+			if 2*radius > self.parent.screen_h + 200: break
+		
+		my_board.update()
+		my_board.interface_group.draw(scrn)
+		pygame.display.flip()
+		
+	def dimensions(self):
+		self.w_percent = 52.5
+		self.h_percent = 15
+		
+	def inner_dimensions(self):
+		self.inner_w_percent = 50
+		self.inner_h_percent = 12.5
+		
+class Circle(pygame.sprite.Sprite):
+	def __init__(self, radius, color, parent, width):
+		pygame.sprite.Sprite.__init__(self, self.containers)
+		s = pygame.surface.Surface((2*radius, 2*radius), pygame.SRCALPHA, 32)
+		pygame.draw.circle(s, color, (int(radius), int(radius)), radius, width)
+		s.set_alpha(0)
+		self.image = s.convert_alpha()
+		middle_x = int(parent.screen_h/2 + parent.edge_dist)
+		middle_y = int(parent.screen_h/2)
+		self.rect = pygame.rect.Rect(int(middle_x - radius), int(middle_y - radius), 2 * radius, 2 * radius)
+	
 				
 class Pawn_Promotion(Element):
 	def __init__(self, parent, color, my_board):

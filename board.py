@@ -115,6 +115,7 @@ class Board():
 			group.clear(self.screen, self.background)
 		for group in self.groups:
 			group.draw(self.screen)
+			
 		pygame.display.update()
 	# --------------------------------------------------------------------------------
 	def set_background(self, background):
@@ -493,7 +494,12 @@ class Board():
 					self.make_piece(piece, ra, fi, self.plyr1_color)
 					pawn_promoted = True
 					
-			newRelease = False		
+			newRelease = False
+
+	def open_end_game(self, color):
+		self.interface.open_end_game()
+		self.interface.game_end = True
+		self.interface.end_game.animate(self, self.screen, color)
 				
 # COLOR KEY FOR LOADING PIECE IMAGES		
 def colorKey(color, n):
