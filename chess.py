@@ -57,7 +57,7 @@ def main():
 		loaded_images.append(load_image(image))
 	pieces.Piece.images = loaded_images
 	
-	ui_images = ["left_arrow_button.png", "right_arrow_button.png"]
+	ui_images = ["left_arrow_button.png", "right_arrow_button.png", "toggle_button.png"]
 	
 	loaded_ui_images = []
 	for image in ui_images:
@@ -108,9 +108,11 @@ def main():
 	# --------------------------------------------------------------------------------
 	#initialize player and opponent
 	plyr = player.Player(my_board, "wh", board.Board.BOT)
+	my_board.plyr1 = plyr
+	
 	opp = intel.Intelligence(my_board, "bl", board.Board.TOP)
-
-	my_board.set_players(plyr, opp)
+	my_board.plyr2 = opp
+	
 	my_board.set_interface(interface, ui)
 	
 	# ORDER MATTERS
@@ -128,8 +130,13 @@ def main():
 		
 		# IF BLACK'S MOVE, MAKE MOVE
 		if my_game.current_move == "bl":
-			opp.move(my_board, my_game)
+			my_board.plyr2.move(my_board, my_game)
 			my_board.plyr1.gen_moves(my_board)
+			interface.update_interface()
+		
+		if my_game.current_move == "wh" and my_game.player1 == "Computer":
+			my_board.plyr1.move(my_board, my_game)
+			my_board.plyr2.gen_moves(my_board)
 			interface.update_interface()
 		
 		# LIMIT FRAMERATE to 60
@@ -161,7 +168,7 @@ def main():
 			newRelease = False
 			interface.clicked(lastRelease)
 				
-			if piece_held and my_board.within(lastRelease) and my_game.current_move == plyr.color:
+			if piece_held and my_board.within(lastRelease) and my_game.current_move == plyr.color and isinstance(my_board.plyr1, player.Player):
 				ra2 = my_board.y_to_rank(lastRelease.pos[1])
 				fi2 = my_board.x_to_file(lastRelease.pos[0])
 					

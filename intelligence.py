@@ -1,4 +1,5 @@
-import pygame, pieces, random, copy, board, sys
+import pygame, pieces, random, copy, board, sys, chess
+from pygame.locals import *
 
 class Intelligence():
 	def __init__(self, my_board, color, posit):
@@ -9,15 +10,22 @@ class Intelligence():
 			self.opp_color = "bl"
 		else:
 			self.opp_color = "wh"
+			
+		if posit == board.Board.BOT:
+			self.opp = my_board.plyr2
+		else:
+			self.opp = my_board.plyr1
 		
 		self.posit = posit # side of the board that this character is on, 1 = top, 2 = Bottom
 		
-		self.takes = []
+		self.moves = []
 		
-	def print_takes(self):
-		for take in self.takes:
-			print(board.move_to_str(take))
-		
+	def print_moves(self):
+		for move in self.moves:
+			print(board.move_to_str(moves))
+			
+	def set_opp(self, opp):
+		self.opp = opp
 		
 	# --------------------------------------------------------------------------------
 	# move a piece from a starting position and an ending position 
@@ -31,25 +39,28 @@ class Intelligence():
 		self.animate(my_board, ra1, fi1, ra2, fi2)
 		if not piece1.move(my_board, ra2, fi2): return False
 		
+		my_board.layers.move_to_front(piece1)
+		my_board.update()
+		
 		if piece2: piece2.kill()
 
 		# GENERATE MOVES for both players based on new board condition
-		my_board.plyr1.gen_moves(my_board)
+		self.opp.gen_moves(my_board)
 		self.gen_moves(my_board)
 		
 		# UPDATE whether player is CHECKED
-		my_board.update_check(my_board.plyr1, self)
+		my_board.update_check(self.opp, self)
 		
 		#print("white checked? " + str(my_board.wh_check))
 		#print("black checked? " + str(my_board.bl_check))
 		
 		# if CHECKMATE, APPEND corresponding PGN
-		if my_board.update_checkmate(my_board.plyr1):
+		if my_board.update_checkmate(self.opp):
 			my_board.last_move = my_board.last_move + "#"
 			return True
 		
 		# if CHECKED, APPEND corresponding PGN
-		if my_board.is_check(my_board.plyr1_color):
+		if my_board.is_check(self.opp.color):
 			my_board.last_move = my_board.last_move + "+"
 		
 	# --------------------------------------------------------------------------------
@@ -128,9 +139,7 @@ class Intelligence():
 		
 		virt_board = board.Virtual_Board(my_board.plyr1_color)
 		virt_board.copy_board(my_board)
-		virt_board.set_players(my_board.plyr1, self)
-		
-		self.gen_moves(virt_board)
+		virt_board.set_players(my_board.plyr1, my_board.plyr2)
 		
 		for move in self.moves:
 			#print("\nPossible Move: " + board.Board.file_[move[1]] + board.Board.rank_[move[0]] + " to " + board.Board.file_[move[3]] + board.Board.rank_[move[2]])
@@ -144,7 +153,7 @@ class Intelligence():
 			
 			result = moved_piece.move(virt_board, ra2, fi2)
 			
-			my_board.plyr1.gen_moves(virt_board)
+			self.opp.gen_moves(virt_board)
 			virt_board.update_check(my_board.plyr1, my_board.plyr2)
 			
 			#print("Will take uncheck? " + str(not virt_board.is_check(self.color)))
@@ -156,7 +165,25 @@ class Intelligence():
 		
 		self.moves = checked_moves
 	
-		my_board.plyr1.gen_moves(virt_board)
+		self.opp.gen_moves(virt_board)
+		
+	def get_click(self, interface, scrn):
+		newRelease = False
+	
+		# GET MOUSE RELEASES
+		for mouseReleased in pygame.event.get(MOUSEBUTTONUP):
+			lastRelease = mouseReleased
+			newRelease = True
+			
+		if newRelease:
+			interface.clicked(lastRelease)
+			interface.update_interface()
+			interface.draw(scrn)
+		
+		for event in pygame.event.get():
+			if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+				sys.exit()
+				return
 	
 	def update_depth(self, my_game):
 		self.depth = my_game.depth
@@ -165,15 +192,22 @@ class Intelligence():
 	def decide(self, my_board):
 		virt_board = board.Virtual_Board(my_board.plyr1_color)
 		virt_board.copy_board(my_board)
-		virt_board.set_players(my_board.plyr1, self)
+		virt_board.set_players(my_board.plyr1, my_board.plyr2)
 		
-		decision = self.minimax(virt_board, self.depth, float('-inf'), float('inf'), True)
-		# print("Decision value is " + str(decision))
+		interface = my_board.interface
+		scrn = my_board.screen
+		
+		self.best_move = [] 
+		
+		print(self.color + " MOVING ! ------------------------------------------------------------------")
+		decision = self.minimax(virt_board, self.depth, float('-inf'), float('inf'), True, interface, scrn)
+		print("Decision value is " + str(decision))
+		
 		virt_board.kill()
 		return self.best_move
 		
 	# RETURNS OPTIMAL MOVE via classic naive minimax algorithm
-	def minimax(self, my_board, depth, alpha, beta, my_turn):
+	def minimax(self, my_board, depth, alpha, beta, my_turn, interface, scrn):
 	
 		if depth == 0:
 			# GENERATE MOVES, RETURN SCORE of the current state of the BOARD
@@ -188,11 +222,14 @@ class Intelligence():
 			self.gen_moves(my_board)
 			self.check_avoidance(my_board)
 			
+			self.get_click(interface, scrn)
+			
 			best_value = float('-inf')
 					
 			# TRY EACH MOVE in a NEW BOARD
 			for move in self.moves:
 				# print("MY MOVE: depth = " + str(depth) + "----------------------------------------------------------------------------------")
+				
 				
 				ra1 = move[0]
 				fi1 = move[1]
@@ -206,13 +243,17 @@ class Intelligence():
 				result = moved_piece.move(my_board, ra2, fi2)
 				
 				# make move for opponent
-				value = max(best_value, self.minimax(my_board, depth-1, alpha, beta, False))
+				value = max(best_value, self.minimax(my_board, depth-1, alpha, beta, False, interface, scrn))
 				
 				alpha = max(value, alpha)
 				
-				if value > best_value: 
+				if value >= best_value: 
+					if depth == self.depth: 
+						if value > best_value:
+							self.best_move = [move]
+						# elif value == best_value: self.best_move.append(move)
+						# print(value)
 					best_value = value
-					if depth == self.depth: self.best_move = move
 					
 				my_board.undo_move()
 				
@@ -223,14 +264,16 @@ class Intelligence():
 			return best_value
 			
 		else: # opponent's turn
-			my_board.plyr1.gen_moves(my_board)
-			my_board.plyr1.check_avoidance(my_board)
+			self.opp.gen_moves(my_board)
+			self.opp.check_avoidance(my_board)
+			
+			self.get_click(interface, scrn)
 			
 			# my_board.print_board()
 			
 			best_value = float('inf')
 			
-			for move in my_board.plyr1.moves:
+			for move in self.opp.moves:
 				# print("PLAYER MOVE: depth = " + str(depth) + "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
 				
 				ra1 = move[0]
@@ -238,13 +281,14 @@ class Intelligence():
 				ra2 = move[2]
 				fi2 = move[3]
 				
+				
 				moved_piece = my_board.get_piece(ra1, fi1)
 				
 				moved_piece.gen_moves(my_board)
 				
 				result = moved_piece.move(my_board, ra2, fi2)
 				
-				value = min(best_value, self.minimax(my_board, depth-1, alpha, beta, True))
+				value = min(best_value, self.minimax(my_board, depth-1, alpha, beta, True, interface, scrn))
 				
 				beta = min(value, beta)
 				
@@ -265,24 +309,24 @@ class Intelligence():
 	# RETURNS a SCORE of the BOARD CONFIGURATION in favor of this player
 	def score_board(self, my_board):
 		# [Pawn, Rook, Knight, Bishop, King, Queen]
-		plyr_pieces = [0 for i in range(0, 6)]
+		opp_pieces = [0 for i in range(0, 6)]
 		my_pieces = [0 for i in range(0, 6)]
 	
 		for ra in range(1, 9):
 			for fi in range(1, 9):
 				piece = my_board.get_piece(ra, fi)
 				if piece == 0: continue
-				if my_board.check_player(piece):	
-					plyr_pieces[piece.index] += 1
+				if my_board.check_player(self.opp, piece):	
+					opp_pieces[piece.index] += 1
 				else: my_pieces[piece.index] += 1
 		
-		score = 5000 * (my_pieces[pieces.Piece.KING] - plyr_pieces[pieces.Piece.KING])
-		score += 100 * (my_pieces[pieces.Piece.QUEN] - plyr_pieces[pieces.Piece.QUEN])
-		score += 50 * (my_pieces[pieces.Piece.ROOK] - plyr_pieces[pieces.Piece.ROOK])
-		score += 30 * (my_pieces[pieces.Piece.KNGH] - plyr_pieces[pieces.Piece.KNGH])
-		score += 30 * (my_pieces[pieces.Piece.BSHP] - plyr_pieces[pieces.Piece.BSHP])
-		score += 10 * (my_pieces[pieces.Piece.PAWN] - plyr_pieces[pieces.Piece.PAWN])
-		score += 0.8 * (len(self.moves) - len(my_board.plyr1.moves))
+		score = 5000 * (my_pieces[pieces.Piece.KING] - opp_pieces[pieces.Piece.KING])
+		score += 200 * (my_pieces[pieces.Piece.QUEN] - opp_pieces[pieces.Piece.QUEN])
+		score += 50 * (my_pieces[pieces.Piece.ROOK] - opp_pieces[pieces.Piece.ROOK])
+		score += 30 * (my_pieces[pieces.Piece.KNGH] - opp_pieces[pieces.Piece.KNGH])
+		score += 30 * (my_pieces[pieces.Piece.BSHP] - opp_pieces[pieces.Piece.BSHP])
+		score += 10 * (my_pieces[pieces.Piece.PAWN] - opp_pieces[pieces.Piece.PAWN])
+		score += 1 * (len(self.moves) - len(self.opp.moves))
 		
 		return score
 					
@@ -301,7 +345,7 @@ class Intelligence():
 		self.update_depth(my_game)
 	
 		# UPDATE CHECKMATE and DRAW
-		my_board.update_check(my_board.plyr1, self)
+		my_board.update_check(my_board.plyr1, my_board.plyr2)
 		my_board.update_checkmate(self)
 		
 		possible = self.moves
@@ -313,18 +357,22 @@ class Intelligence():
 			my_board.game_draw = True
 			return True
 		
-		# PICK a RANDOM MOVE, if choosing randomly
-		random.seed()
-		i = int(random.uniform(0, len(possible) - 1))
 		
 		# PICK an OPTIMAL MOVE
-		move = self.decide(my_board)
+		moves = self.decide(my_board)
+		print(self.color + "'s best moves: " + str(moves))
+		
+		# PICK a RANDOM MOVE, if choosing randomly
+		random.seed()
+		i = int(random.uniform(0, len(moves) - 1))
+		
+		move = moves[i]
 		
 		self.gen_moves(my_board)
 		self.check_avoidance(my_board)
 		
-		print("Current board before moving: ")
-		my_board.print_board()
+		#print("Current board before moving: ")
+		#my_board.print_board()
 		
 		print("AI moving")
 		print(board.move_to_str(move))

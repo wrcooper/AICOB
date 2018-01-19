@@ -1,4 +1,4 @@
-import pygame, board, pieces
+import pygame, board, pieces, player, intelligence as intel
 
 class Game():
 	def __init__(self, player_color):
@@ -14,19 +14,18 @@ class Game():
 
 	# BEGIN the NEXT MOVE of the game
 	def next_move(self):
-		if self.check_end():
-			return
-		
-		self.my_board.checkmate = "bl"
-		self.end_game()
 	
 		self.sequence.append(self.my_board.last_move)
+		
+		if self.check_end():
+			return
+	
 		if self.current_move == "wh":
 			self.current_move = "bl"
 			
 			self.reset_en_passant()
 			
-		else:	
+		elif self.current_move == "bl":	
 			self.next_turn()
 			self.current_move = "wh"
 	
@@ -42,6 +41,20 @@ class Game():
 				if isinstance(piece, pieces.Pawn):	
 					if piece.color == self.current_move:
 						piece.en_passant_able = False
+	
+	def toggle_player(self):
+		if self.player1 == "Computer":
+			plyr = player.Player(self.my_board, "wh", board.Board.BOT)
+			self.my_board.plyr1 = plyr
+			self.my_board.plyr2.set_opp(plyr)
+			plyr.gen_moves(self.my_board)
+			self.player1 = "Player"
+		else:
+			plyr = intel.Intelligence(self.my_board, "wh", board.Board.BOT)
+			self.my_board.plyr1 = plyr
+			self.my_board.plyr2.set_opp(plyr)
+			plyr.gen_moves(self.my_board)
+			self.player1 = "Computer"
 						
 	def check_end(self):
 		if self.my_board.checkmate != False:
@@ -53,14 +66,19 @@ class Game():
 		if self.my_board.checkmate == "wh":
 			self.winner = "Black"
 			self.my_board.open_end_game((0,0,0))
-		else:
+		elif self.my_board.checkmate == "bl":
 			self.winner = "White"
 			self.my_board.open_end_game((255,255,255))
+		elif self.my_board.checkmate == "dr":
+			self.winner = "Draw"
+			self.my_board.open_end_game((125,125,125))
 						
 	def set_board(self, my_board):
 		self.my_board = my_board
 		
 	def new_game(self):
+		self.my_board.interface.game_end = False
+		self.checkmate = False
 		self.pgn = ""
 		self.sequence = [] 
 		self.turn_number = 1

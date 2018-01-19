@@ -76,10 +76,10 @@ class UI(pygame.sprite.Sprite):
 		self.new_game_button = New_Game_Button(self)
 		self.settings = Settings(self)
 		self.pgn = PGN(self)
-		self.chat = Chat(self)
+		self.score = Score(self)
 		
 		self.elements = [self.turn_number, self.to_move, self.player_name, self.player_color, 
-			self.new_game_button, self.settings, self.pgn, self.chat]
+			self.new_game_button, self.settings, self.pgn, self.score]
 	
 	def init_settings(self):
 		self.settings_page = Settings_Page(self)
@@ -93,8 +93,13 @@ class UI(pygame.sprite.Sprite):
 			self.init_game_interface()
 		elif self.settings: self.init_settings()
 		
-		
 		if self.game_end: self.open_end_game()
+		
+	def draw(self, scrn):
+		bgd = scrn.copy()
+		self.containers.clear(scrn, bgd)
+		self.containers.draw(scrn)
+		pygame.display.update()
 		
 	def open_pawn_promotion(self, color, my_board):
 		self.pawn_prom = Pawn_Promotion(self, color, my_board)
@@ -154,6 +159,9 @@ class Element(pygame.sprite.Sprite):
 			s.fill((255,255,255))
 		
 		self.image = s
+		
+	def get_middle(self):
+		return int(self.rect.w * .5)
 		
 	def set_border(self, setting = True):
 		self.border = setting
@@ -322,7 +330,7 @@ class Settings_Page(Element):
 		self.h_percent = 95
 		self.x_percent = 0
 		self.y_percent = 0
-		
+	
 class Back_Button(Element):
 	def __init__(self, parent):
 		Element.__init__(self, parent)
@@ -331,11 +339,14 @@ class Back_Button(Element):
 		s = font.render(text, True, (0,0,0))
 		self.image.blit(s, (self.stroke, self.stroke))
 		
+		size = font.size(text)
+		self.rect.y = size[0] + 10
+		
 	def click_function(self):
 		self.parent.main_menu = True
 		
 	def dimensions(self):
-		self.w_percent = 12.5
+		self.w_percent = 15
 		self.h_percent = 4
 		self.x_percent = 5
 		self.y_percent = 2.5
@@ -409,7 +420,46 @@ class Player_Select(Element):
 	def __init__(self, parent):
 		Element.__init__(self, parent)
 		font = parent.get_font(50)
-		player_text = "Player 2: " + parent.game.player2
+		player2_text = "Player 2: " + parent.game.player2
+		player1_text = "Player 1: " + parent.game.player1
+		
+		player2_surf = font.render(player2_text, True, (0,0,0))
+		player2_size = font.size(player2_text)
+		
+		player1_surf = font.render(player1_text, True, (0,0,0))
+		player1_size = font.size(player1_text)
+		
+		mid_x = self.get_middle()
+		
+		self.image.blit(player2_surf, (20, 20))
+		player1_y = (player2_size[1] + 40)
+		self.image.blit(player1_surf, (20, player1_y))
+		
+		toggle_button = pygame.transform.smoothscale(parent.images[2], (100, 50))
+		toggle_rect = toggle_button.get_rect()
+		
+		toggle_x = self.rect.w - toggle_rect.w - 20
+		#toggle1_y = 14
+		toggle2_y = player1_y
+		
+		#self.image.blit(toggle_button, (toggle_x, toggle1_y))
+		self.image.blit(toggle_button, (toggle_x, toggle2_y))
+		
+		#self.toggle1_rect = pygame.rect.Rect(toggle_x, toggle1_y, 100, 50)
+		self.toggle_x = self.rect.x + toggle_x
+		self.toggle2_y = self.rect.y + toggle2_y
+		self.toggle_w  = 100
+		self.toggle_h = 50
+		
+	def clicked(self, click):
+		if (click.pos[0] > self.rect.x and click.pos[0] < self.rect.x + self.rect.w and click.pos[1] < self.rect.y + self.rect.h and click.pos[1] > self.rect.y):
+			self.toggle2_clicked(click)
+			
+	def toggle2_clicked(self, click):
+		print(click.pos[0])
+		print(self.toggle_x)
+		if (click.pos[0] > self.toggle_x and click.pos[0] < self.toggle_x + self.toggle_w and click.pos[1] < self.toggle2_y + self.toggle_h and click.pos[1] > self.toggle2_y):	
+			self.parent.game.toggle_player()
 		
 	def dimensions(self):
 		self.w_percent = 80
@@ -423,14 +473,14 @@ class Player_Select(Element):
 class PGN(Element):
 	def __init__(self, parent):
 		Element.__init__(self, parent)
-		font = parent.get_font(40)
+		font = parent.get_font(30)
 		text = "PGN: " + parent.pgn
 		
 		words = text.split(' ')
 		line = ""
 		i = 0
-		left_border = 0
-		top_border = 0	
+		left_border = 5
+		top_border = 5
 		
 		for word in words:
 			if font.size(line + word)[0] > self.width - 5:
@@ -451,18 +501,14 @@ class PGN(Element):
 	def centered(self):
 		self.centered = True
 		
-class Chat(Element):
+class Score(Element):
 	def __init__(self, parent):
 		Element.__init__(self, parent)
 		font = parent.get_font(40)
-		text = "Chat"
-		s = font.render(text, True, (0, 0, 0))
 		
-		size = font.size(text)
 		left_border = 0
 		top_border = 0	
 		
-		self.image.blit(s, (left_border, top_border))
 	
 	def dimensions(self):
 		self.w_percent = 94
@@ -479,7 +525,11 @@ class End_Game(Element):
 		
 		self.parent = parent
 		
-		end_text = parent.game.winner + " has won!!"
+		if parent.game.winner == "Draw":
+			end_text = "Draw!!"
+		else:
+			end_text = parent.game.winner + " has won!!"
+			
 		font = parent.get_font(80)
 		text_size = font.size(end_text)
 		text_surf = font.render(end_text, True, (0,0,0))

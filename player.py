@@ -43,8 +43,6 @@ class Player():
 		virt_board.copy_board(my_board)
 		virt_board.set_players(my_board.plyr1, self)
 		
-		self.gen_moves(virt_board)
-		
 		for move in self.moves:
 			#print("\nPossible Move: " + board.Board.file_[move[1]] + board.Board.rank_[move[0]] + " to " + board.Board.file_[move[3]] + board.Board.rank_[move[2]])
 			# create new board with same pieces as my_board

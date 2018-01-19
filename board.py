@@ -1,8 +1,6 @@
 import pygame, math, inspect, chess, game, pieces, time
 from pygame.locals import *
 
-
-
 class Board():
 	TOP = 1
 	BOT = 2
@@ -77,7 +75,7 @@ class Board():
 	# --------------------------------------------------------------------------------
 	# DRAW BOARD BACKGROUND
 	def draw_bg(self, screen):
-		colors = [(56,23,19), (249, 190, 102)]
+		colors = [(249, 190, 102), (56,23,19)]
 		current = 0
 		space_height = self.space_height
 		for i in range(9):
@@ -95,8 +93,10 @@ class Board():
 		wood.set_alpha(150)
 		bgwood = pygame.transform.scale(wood, (self.height, self.height))
 		self.draw_bg(background)
+		
 		background.blit(bgwood, (0,0))
 		self.screen.blit(background, (self.edge_dist, 0))
+		
 		background = self.screen.copy()
 		self.set_background(background)
 	
@@ -193,26 +193,33 @@ class Board():
 			self.make_piece("N", row1[i], 7, order[i])
 			self.make_piece("B", row1[i], 3, order[i])
 			self.make_piece("B", row1[i], 6, order[i])
-			self.make_piece("K", row1[i], 4, order[i])
-			self.make_piece("Q", row1[i], 5, order[i])
+			self.make_piece("K", row1[i], 5, order[i])
+			self.make_piece("Q", row1[i], 4, order[i])
 			
 	# --------------------------------------------------------------------------------
 	# INITIALIZE any PIECE
 	def make_piece(self, piece, ra, fi, color):
 		x = self.file_to_x(fi)
 		y = self.rank_to_y(ra)
+		
 		if piece == "":
 			piece = pieces.Pawn(ra, fi, color)
+			
 		elif piece == "R":
 			piece = pieces.Rook(ra, fi, color)
+			
 		elif piece == "N":
 			piece = pieces.Knight(ra, fi, color)
+			
 		elif piece == "B":
 			piece = pieces.Bishop(ra, fi, color)
+			
 		elif piece == "K":
 			piece = pieces.King(ra, fi, color)
+			
 		elif piece == "Q":
 			piece = pieces.Queen(ra, fi, color)
+			
 		piece.set_rect(x, y, self.space_height)
 		piece.set_image(self.space_height)
 		self.board[ra][fi] = piece
@@ -261,6 +268,7 @@ class Board():
 			self.checkmate = plyr.color
 			return True
 		elif len(plyr.moves) == 0:
+			self.checkmate = "dr"
 			self.game_draw = True
 			return True
 		else:
@@ -305,8 +313,8 @@ class Board():
 
 	# --------------------------------------------------------------------------------					
 	# checks if piece is same color as plyr1_color
-	def check_player(self, piece):
-		if self.plyr1_color == piece.color:
+	def check_player(self, plyr, piece):
+		if plyr.color == piece.color:
 			return True
 		else: return False
 	
@@ -349,8 +357,10 @@ class Board():
 			
 			piece.has_moved = has_moved
 			piece.en_passant_able = en_passant_able
+			
 			piece.ra = ra1
 			piece.fi = fi1
+			
 			self.set_space(ra1, fi1, piece)
 			self.set_space(ra2, fi2, 0)
 			
@@ -384,7 +394,7 @@ class Board():
 	def piece_held(self, my_game, ra, fi, group):
 		piece = self.get_piece(ra, fi)
 			
-		if not piece or not valid_space(ra, fi) or piece.color != my_game.current_move or not self.check_player(piece): 
+		if not piece or not valid_space(ra, fi) or piece.color != my_game.current_move or not self.check_player(self.plyr1, piece): 
 			return False
 
 		# update piece location to follow mouse
@@ -544,6 +554,7 @@ class Virtual_Board(Board):
 		elif shorthand == "Q":
 			new_piece = pieces.Queen(ra, fi, color)
 		new_piece.kill()
+		new_piece.moves = list(piece.moves)
 		new_piece.has_moved = piece.has_moved
 		new_piece.en_passant_able = piece.en_passant_able
 		self.board[ra][fi] = new_piece
