@@ -6,11 +6,7 @@ class Intelligence():
 		self.board = my_board
 		self.color = color
 		
-		if color == "wh":	
-			self.opp_color = "bl"
-		else:
-			self.opp_color = "wh"
-			
+		
 		if posit == board.Board.BOT:
 			self.opp = my_board.plyr2
 		else:
@@ -50,9 +46,6 @@ class Intelligence():
 		
 		# UPDATE whether player is CHECKED
 		my_board.update_check(self.opp, self)
-		
-		#print("white checked? " + str(my_board.wh_check))
-		#print("black checked? " + str(my_board.bl_check))
 		
 		# if CHECKMATE, APPEND corresponding PGN
 		if my_board.update_checkmate(self.opp):
@@ -169,6 +162,7 @@ class Intelligence():
 		
 	def get_click(self, interface, scrn):
 		newRelease = False
+		lastRelease = False
 	
 		# GET MOUSE RELEASES
 		for mouseReleased in pygame.event.get(MOUSEBUTTONUP):
@@ -176,9 +170,12 @@ class Intelligence():
 			newRelease = True
 			
 		if newRelease:
-			interface.clicked(lastRelease)
+			result = interface.clicked(lastRelease)
 			interface.update_interface()
 			interface.draw(scrn)
+			
+			if result == "new_game":
+				return "new_game"
 		
 		for event in pygame.event.get():
 			if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
@@ -201,6 +198,8 @@ class Intelligence():
 		
 		print(self.color + " MOVING ! ------------------------------------------------------------------")
 		decision = self.minimax(virt_board, self.depth, float('-inf'), float('inf'), True, interface, scrn)
+		if decision == "new_game":
+			return decision
 		print("Decision value is " + str(decision))
 		
 		virt_board.kill()
@@ -222,7 +221,9 @@ class Intelligence():
 			self.gen_moves(my_board)
 			self.check_avoidance(my_board)
 			
-			self.get_click(interface, scrn)
+			result = self.get_click(interface, scrn)
+			if result == "new_game":
+				return "new_game"
 			
 			best_value = float('-inf')
 					
@@ -240,10 +241,15 @@ class Intelligence():
 				
 				moved_piece.gen_moves(my_board)
 				
-				result = moved_piece.move(my_board, ra2, fi2)
+				moved_piece.move(my_board, ra2, fi2)
 				
 				# make move for opponent
-				value = max(best_value, self.minimax(my_board, depth-1, alpha, beta, False, interface, scrn))
+				result = self.minimax(my_board, depth-1, alpha, beta, False, interface, scrn)
+				
+				if result == "new_game":
+					return "new_game"
+				
+				value = max(best_value, result)
 				
 				alpha = max(value, alpha)
 				
@@ -267,7 +273,9 @@ class Intelligence():
 			self.opp.gen_moves(my_board)
 			self.opp.check_avoidance(my_board)
 			
-			self.get_click(interface, scrn)
+			result = self.get_click(interface, scrn)
+			if result == "new_game":
+				return "new_game"
 			
 			# my_board.print_board()
 			
@@ -286,9 +294,14 @@ class Intelligence():
 				
 				moved_piece.gen_moves(my_board)
 				
-				result = moved_piece.move(my_board, ra2, fi2)
+				moved_piece.move(my_board, ra2, fi2)
 				
-				value = min(best_value, self.minimax(my_board, depth-1, alpha, beta, True, interface, scrn))
+				result = self.minimax(my_board, depth-1, alpha, beta, True, interface, scrn)
+				
+				if result == "new_game":
+					return "new_game"
+				
+				value = min(best_value, result)
 				
 				beta = min(value, beta)
 				
@@ -361,6 +374,9 @@ class Intelligence():
 		# PICK an OPTIMAL MOVE
 		moves = self.decide(my_board)
 		print(self.color + "'s best moves: " + str(moves))
+		
+		if moves == "new_game":
+			return False
 		
 		# PICK a RANDOM MOVE, if choosing randomly
 		random.seed()

@@ -11,6 +11,7 @@ class Game():
 		
 		self.player2 = "Computer"
 		self.player1 = "Human"
+		self.winner = False
 
 	# BEGIN the NEXT MOVE of the game
 	def next_move(self):
@@ -78,12 +79,13 @@ class Game():
 		
 	def new_game(self):
 		self.my_board.interface.game_end = False
-		self.checkmate = False
+		self.my_board.checkmate = False
+		self.current_move = "wh"
+		self.winner = False
 		self.pgn = ""
 		self.sequence = [] 
 		self.turn_number = 1
 		self.my_board.init_pieces("wh")
-		self.current_move = "wh"
 
 	# INCREMENT TURN NUMBER
 	def next_turn(self):

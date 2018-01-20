@@ -5,11 +5,6 @@ class Player():
 		self.my_board = my_board
 		self.color = color
 		
-		if color == "wh":	
-			self.opp_color = "bl"
-		else:
-			self.opp_color = "wh"
-		
 		self.posit = posit # side of the board that this character is on, 1 = bottom, 2 = top
 		
 	# --------------------------------------------------------------------------------
@@ -70,11 +65,7 @@ class Player():
 		my_board.plyr2.gen_moves(virt_board)
 	# --------------------------------------------------------------------------------
 	def valid_move(self, my_board, ra1, fi1, ra2, fi2):
-		print("Here1")
-		print(str(self.in_moves(ra1, fi1, ra2, fi2)))
 		self.gen_moves(my_board)
-		print("Here2")
-		print(str(self.in_moves(ra1, fi1, ra2, fi2)))
 		self.check_avoidance(my_board)
 		
 		piece = my_board.get_piece(ra1, fi1)

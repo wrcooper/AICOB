@@ -38,7 +38,9 @@ class UI(pygame.sprite.Sprite):
 		print("click!")
 		if (click.pos[0] > self.start_x and click.pos[0] < self.end_x and click.pos[1] > 0):	
 			for element in self.elements:
-				element.clicked(click)
+				result = element.clicked(click)
+				if result != None:
+					return result
 
 	def get_font(self, size):
 		font = pygame.font.Font(None, size)
@@ -93,7 +95,9 @@ class UI(pygame.sprite.Sprite):
 			self.init_game_interface()
 		elif self.settings: self.init_settings()
 		
-		if self.game_end: self.open_end_game()
+		if self.game_end: 
+			print("game_end is: " + str(self.game_end))
+			self.open_end_game()
 		
 	def draw(self, scrn):
 		bgd = scrn.copy()
@@ -177,7 +181,7 @@ class Element(pygame.sprite.Sprite):
 	
 	def clicked(self, click):
 		if (click.pos[0] > self.rect.x and click.pos[0] < self.rect.x + self.rect.w and click.pos[1] < self.rect.y + self.rect.h and click.pos[1] > self.rect.y):	
-			self.click_function()
+			return self.click_function()
 	
 	def click_function(self):
 		print(str(self))
@@ -277,6 +281,7 @@ class New_Game_Button(Element):
 		
 	def click_function(self):
 		self.parent.game.new_game()
+		return "new_game"
 	
 	def dimensions(self):
 		self.w_percent = 94
@@ -485,16 +490,16 @@ class PGN(Element):
 		for word in words:
 			if font.size(line + word)[0] > self.width - 5:
 				s = font.render(line, True, (0, 0, 0))
-				self.image.blit(s, (left_border + 5, top_border + 5 + (i * 35) ))
+				self.image.blit(s, (left_border + 5, top_border + 5 + (i * 25) ))
 				line = ""
 				i += 1
 			line += word + " "
 		s = font.render(line, True, (0, 0, 0))
-		self.image.blit(s, (left_border + 5, top_border + 5 + (i * 35) ))
+		self.image.blit(s, (left_border + 5, top_border + 5 + (i * 25) ))
 	
 	def dimensions(self):
 		self.w_percent = 94
-		self.h_percent = 20
+		self.h_percent = 30
 		self.x_percent = 0
 		self.y_percent = 33
 		
@@ -512,9 +517,9 @@ class Score(Element):
 	
 	def dimensions(self):
 		self.w_percent = 94
-		self.h_percent = 40
+		self.h_percent = 30
 		self.x_percent = 0
-		self.y_percent = 55
+		self.y_percent = 65
 		
 	def centered(self):
 		self.centered = True

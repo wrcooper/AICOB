@@ -101,8 +101,8 @@ class Board():
 		self.set_background(background)
 	
 	# SET GROUPS for DRAWING
-	def set_groups(self, highlight, highlight_current, ui, all):
-		self.groups = (highlight, highlight_current, ui, all)
+	def set_groups(self, highlight, highlight_current, all, ui):
+		self.groups = (highlight, highlight_current, all, ui)
 		self.layers = all
 		
 	def print_groups(self):

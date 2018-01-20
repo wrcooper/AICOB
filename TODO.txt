@@ -1,6 +1,6 @@
 TODO:
-- Add UI settings
-- Add UI representation of checks and checkmate
+- Allow player to enter their name
+- Allow player to get pgn
 
 Issues:
 - AI does not consider pawn promotion

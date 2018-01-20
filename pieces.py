@@ -200,7 +200,7 @@ class Pawn(Piece):
 			
 			self.set_pos(my_board, ra, fi)
 			
-			my_board.last_move = board.Board.file_[self.fi] + self.take_to_str(ra, fi) +"e.p."
+			my_board.last_move = self.take_to_str(ra, fi) +"e.p."
 			return True
 			
 		# SETTING EN PASSANT
@@ -480,14 +480,14 @@ class King(Piece):
 						
 		castle = True
 		
-		if not self.has_moved and my_board.board[self.ra][1] != 0 and not my_board.board[self.ra][1].has_moved:
+		if not my_board.is_check(self.color) and not self.has_moved and my_board.board[self.ra][1] != 0 and not my_board.board[self.ra][1].has_moved:
 			for i in range(2, self.fi):
 				if my_board.board[self.ra][i] != 0: castle = False
 			if castle: self.moves.append((self.ra, self.fi - 2))
 			
 		castle = True
 		
-		if not self.has_moved and my_board.board[self.ra][8] != 0 and not my_board.board[self.ra][8].has_moved:
+		if not my_board.is_check(self.color) and not self.has_moved and my_board.board[self.ra][8] != 0 and not my_board.board[self.ra][8].has_moved:
 			for i in range(self.fi + 1, 8):
 				if my_board.board[self.ra][i] != 0: castle = False
 			if castle: self.moves.append((self.ra, self.fi + 2))
@@ -517,7 +517,7 @@ class King(Piece):
 			rook.has_moved = True
 			self.has_moved = True
 			
-			my_board.last_move = "O-O"
+			my_board.last_move = "O-O-O"
 			return True
 			
 		elif result == "rcastle":	
@@ -537,7 +537,7 @@ class King(Piece):
 			rook.has_moved = True
 			self.has_moved = True
 			
-			my_board.last_move = "O-O-O"
+			my_board.last_move = "O-O"
 			return True
 			
 		elif result == True:

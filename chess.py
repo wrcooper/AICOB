@@ -116,7 +116,7 @@ def main():
 	my_board.set_interface(interface, ui)
 	
 	# ORDER MATTERS
-	my_board.set_groups(highlight, highlight_current, ui, all)
+	my_board.set_groups(highlight, highlight_current, all, ui)
 
 
 	newClick = False
