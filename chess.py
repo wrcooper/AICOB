@@ -163,7 +163,7 @@ def main():
 		if piece_held:
 			my_board.piece_held(my_game, ra1, fi1, all)
 			
-		# RELEASE PIECE IF RELEASED, ATTEMPT MOVE
+		# RELEASE PIECE; IF RELEASED, ATTEMPT MOVE
 		if newRelease:
 			newRelease = False
 			interface.clicked(lastRelease)
@@ -182,15 +182,7 @@ def main():
 				piece_held = False
 					
 			interface.update_interface()
-		
-		# IF CHECKMATED, END GAME
-		if my_board.checkmate != False:	
-			print(my_board.checkmate + " has LOST!!")
 			
-		# IF DRAWN, END GAME
-		if my_board.game_draw == True:
-			print("Draw!!")
-	
 		# IF ESC PRESSED, QUIT PROGRAM
 		for event in pygame.event.get():
 			if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):

@@ -55,8 +55,9 @@ class Board():
 		self.plyr2 = plyr2
 		
 	# PRINT STATE OF BOARD for DEBUGGING
-	def print_board(self):
+	def print_board(self, indent):
 		for ra in range(1, 9):
+			print(indent, end='')
 			for fi in range(1, 9):
 				piece = self.get_piece(ra, fi)
 				if isinstance(piece, pieces.Pawn): print("P", end='')
