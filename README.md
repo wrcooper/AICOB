@@ -14,3 +14,6 @@ A chess AI project made in my free time in order to experiment with different ga
 ### Future Plans
 * Add additional AI algorithms that the user can choose from
 * Optimize code
+* Implement Universal Chess Interface Support
+* Add a move timer
+* Save previously calculated best moves in a chess position dictionary

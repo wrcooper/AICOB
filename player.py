@@ -34,7 +34,7 @@ class Player():
 	def check_avoidance(self, my_board):
 		checked_moves = []
 		
-		virt_board = board.Virtual_Board(my_board.plyr1_color)
+		virt_board = board.Virtual_Board()
 		virt_board.copy_board(my_board)
 		virt_board.set_players(my_board.plyr1, self)
 		

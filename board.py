@@ -14,16 +14,13 @@ class Board():
 		self.scrn_info = scrn_info
 		self.clock = pygame.time.Clock()
 		
-		self.set_player_colors(plyr1_color)
-		
 		scrn_h = scrn_info.current_h
 		scrn_w = scrn_info.current_w
-		margin = (scrn_w - scrn_h)/2 #
+		margin = (scrn_w - scrn_h)/2 
 		
 		self.height = scrn_h
 		self.width = scrn_w
 		
-		self.height = scrn_h
 		self.space_height = scrn_h/8
 		self.edge_dist = margin/10 # this is the distance from the edge of the board to the edge of the screen
 		
@@ -41,14 +38,6 @@ class Board():
 		self.pawn_promotion = False
 		
 		self.make_hist()
-		
-	def set_player_colors(self, plyr1_color):
-		if plyr1_color == "wh":
-			plyr2_color = "bl"
-		else: plyr2_color = "wh"
-		
-		self.plyr1_color = plyr1_color
-		self.plyr2_color = plyr2_color
 		
 	def set_players(self, plyr1, plyr2):
 		self.plyr1 = plyr1
@@ -81,7 +70,7 @@ class Board():
 		space_height = self.space_height
 		for i in range(9):
 			for j in range(9):
-				if current == 2:
+				if current > 1:
 					current = 0
 				x_distance = space_height * i
 				y_distance = space_height * j
@@ -171,7 +160,6 @@ class Board():
 			for fi in range(9):
 				piece = self.get_piece(ra, fi)
 				if piece != 0:
-					print(str(piece))
 					piece.kill()
 					
 		self.board = [[0 for x in range(9)] for y in range(9)]
@@ -290,7 +278,7 @@ class Board():
 					piece = self.board[ra][fi]
 					color = piece.color
 					
-					if self.plyr1_color == "wh":
+					if self.plyr1.color == "wh":
 						white = plyr
 						black = opp
 					else: 
@@ -474,7 +462,7 @@ class Board():
 	
 	# OPEN PAWN PROMOTION INTERFACE
 	def open_pawn_promotion(self, ra, fi):
-		self.interface.open_pawn_promotion(self.plyr1_color, self)
+		self.interface.open_pawn_promotion(self.plyr1.color, self)
 		self.interface_group.draw(self.screen)
 		pygame.display.update()
 		
@@ -502,7 +490,7 @@ class Board():
 				print("Here")
 				
 				if piece != False:
-					self.make_piece(piece, ra, fi, self.plyr1_color)
+					self.make_piece(piece, ra, fi, self.plyr1.color)
 					pawn_promoted = True
 					
 			newRelease = False
@@ -529,9 +517,8 @@ def valid_space(ra, fi):
 	return ra > 0 and ra < 9 and fi > 0 and fi < 9
 		
 class Virtual_Board(Board):
-	def __init__(self, plyr1_color):
+	def __init__(self):
 		self.board = [[0 for x in range(9)] for y in range(9)]
-		self.plyr1_color = plyr1_color
 		self.wh_check = False
 		self.bl_check = False
 		self.space_height = 0
@@ -575,13 +562,6 @@ class Virtual_Board(Board):
 				piece = self.get_piece(ra, fi)
 				if piece:
 					piece.kill()
-		
-	def virt_move(self, moved_piece, ra1, fi1, ra2, fi2):
-		moved_piece.has_moved = True
-		self.set_space(ra2, fi2, moved_piece)
-		moved_piece.ra = ra2
-		moved_piece.fi = fi2
-		self.set_space(ra1, fi1, 0)
 		
 # SPRITE CLASSES FOR HIGHLIGHTING SPACES
 class Highlight(pygame.sprite.Sprite):

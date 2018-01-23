@@ -44,7 +44,7 @@ class Piece(pygame.sprite.Sprite):
 		return pos
 
 	def direction(self, my_board):
-		if self.color == my_board.plyr1_color:
+		if self.color == my_board.plyr1.color:
 			return -1
 		else:
 			return 1
@@ -131,7 +131,7 @@ class Pawn(Piece):
 		Piece.__init__(self, ra, fi, color)
 		self.en_passant_able = False
 		self.shorthand = ""
-		self.index = 0
+		self.index = Piece.PAWN
 		
 	def set_image(self, height):
 		self.image = Piece.load_image(board.colorKey(self.color, 0), height)
@@ -270,7 +270,7 @@ class Rook(Piece):
 	def __init__(self, ra, fi, color):
 		Piece.__init__(self, ra, fi, color)
 		self.shorthand = "R"
-		self.index = 1
+		self.index = Piece.ROOK
 		
 	def set_image(self, height):
 		self.image = Piece.load_image(board.colorKey(self.color, 1), height)
@@ -317,7 +317,7 @@ class Knight(Piece):
 	def __init__(self, ra, fi, color):
 		Piece.__init__(self, ra, fi, color)
 		self.shorthand = "N"
-		self.index = 2
+		self.index = Piece.KNGH
 		
 	def set_image(self, height):
 		self.image = Piece.load_image(board.colorKey(self.color, 2), height)
@@ -391,7 +391,7 @@ class Bishop(Piece):
 	def __init__(self, ra, fi, color):
 		Piece.__init__(self, ra, fi, color)
 		self.shorthand = "B"
-		self.index = 3
+		self.index = Piece.BSHP
 		
 	def set_image(self, height):
 		self.image = Piece.load_image(board.colorKey(self.color, 3), height)
@@ -457,7 +457,7 @@ class King(Piece):
 	def __init__(self, ra, fi, color):
 		Piece.__init__(self, ra, fi, color)
 		self.shorthand = "K"
-		self.index = 4
+		self.index = Piece.KING
 		
 	def set_image(self, height):
 		self.image = Piece.load_image(board.colorKey(self.color, 4), height)
@@ -574,7 +574,7 @@ class Queen(Piece):
 	def __init__(self, ra, fi, color):
 		Piece.__init__(self, ra, fi, color)
 		self.shorthand = "Q"
-		self.index = 5
+		self.index = Piece.QUEN
 
 	def set_image(self, height):
 		self.image = Piece.load_image(board.colorKey(self.color, 5), height)

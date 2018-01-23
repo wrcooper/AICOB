@@ -103,7 +103,7 @@ def main():
 
 	# --------------------------------------------------------------------------------
 	#initialize piece sprites
-	my_board.init_pieces(my_board.plyr1_color)
+	my_board.init_pieces(plyr1_color)
 	
 	# --------------------------------------------------------------------------------
 	#initialize player and opponent
