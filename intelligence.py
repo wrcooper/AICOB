@@ -1,11 +1,11 @@
-import pygame, pieces, random, copy, board, sys, chess
+import pygame, pieces, random, copy, board, sys, chess, json
 from pygame.locals import *
 
 
 
 class Intelligence():
 	def __init__(self, my_board, color, posit):
-		self.board = my_board
+		self.my_board = my_board
 		self.color = color
 		
 		
@@ -64,7 +64,44 @@ class Intelligence():
 		# if CHECKED, APPEND corresponding PGN
 		if my_board.is_check(self.opp.color):
 			my_board.last_move = my_board.last_move + "+"
+	# --------------------------------------------------------------------------------
+	def load_dict(self):
+		dict_file = open("move_dict.json", "r")
+		move_dict = json.loads(json.load(dict_file))
+		dict_file.close()
 		
+		self.move_dict = move_dict
+		
+	def flip_move(self, move):
+		transformed_move = list(map(lambda x: (-1 * x) + 9, move))
+		return transformed_move
+		
+	def load_calculated_move(self):
+		# must be adjusted for the side of the board this player is on
+		board_str = self.my_board.gen_board_str(self.pos)
+		if board_str not in self.move_dict:
+			return False
+		else: best_move = self.move_dict[board_str]
+		
+		if self.pos == board.Board.TOP:
+			return self.flip_move(best_move)
+		
+		return best_move
+		
+	def save_move(self, move):
+		board_str = self.my_board.gen_board_str(self.pos)
+		
+		if self.pos == board.Board.TOP:
+			saved_move = self.flip_move(move)
+		else: saved_move = move
+		
+		with open("move_dict.json", "rb+") as dict_file:
+			string = ", \\\"" + board_str + "\\\": " + str(saved_move) + "}"
+			binary = bytearray(string, "utf-8")
+			dict_file.seek(-2, 2)
+			dict_file.write(binary)
+		
+		self.move_dict[board_str] = saved_move
 	# --------------------------------------------------------------------------------
 	# ANIMATE using simple distance/time velocity formula
 	def animate(self, my_board, ra1, fi1, ra2, fi2):
@@ -380,17 +417,8 @@ class Intelligence():
 	
 		# UPDATE CHECKMATE and DRAW
 		my_board.update_check(my_board.plyr1, my_board.plyr2)
-		my_board.update_checkmate(self)
-		
-		possible = self.moves
-		
-		if len(possible) == 0 and my_board.is_check(self.color):
-			my_board.checkmate = self.color
-			return True
-		elif len(possible) == 0:
-			my_board.game_draw = True
-			return True
-		
+		if my_board.update_checkmate(self):
+			return False
 		
 		# PICK an OPTIMAL MOVE
 		moves = self.decide(my_board)

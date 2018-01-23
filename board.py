@@ -39,6 +39,27 @@ class Board():
 		
 		self.make_hist()
 		
+	def gen_board_str(self, position):
+		board_str = ""
+		
+		# string must be adjusted depending on which side of the board the player is on
+		if position == Board.TOP:
+			for ra in range(8, 0, -1):
+				for fi in range(8, 0, -1):
+					piece = self.get_piece(ra, fi)
+					if isinstance(piece, pieces.Pawn): board_str += "P"
+					elif piece != 0: board_str += piece.shorthand
+					else: board_str += "x" 
+		else:
+			for ra in range(1, 9):
+				for fi in range(1, 9):
+					piece = self.get_piece(ra, fi)
+					if isinstance(piece, pieces.Pawn): board_str += "P"
+					elif piece != 0: board_str += piece.shorthand
+					else: board_str += "x" 
+		
+		return board_str
+		
 	def set_players(self, plyr1, plyr2):
 		self.plyr1 = plyr1
 		self.plyr2 = plyr2

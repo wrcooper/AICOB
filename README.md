@@ -17,3 +17,4 @@ A chess AI project made in my free time in order to experiment with different ga
 * Implement Universal Chess Interface Support
 * Add a move timer
 * Save previously calculated best moves in a chess position dictionary
+* Enhance endgame moves

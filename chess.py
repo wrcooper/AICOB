@@ -5,7 +5,7 @@
 # 11/5/2017
 # ------------------------------------------------------
 
-import pygame, time, os.path, math, board, game, UI, pieces, intelligence as intel, player, pdb
+import pygame, time, os.path, math, board, game, UI, pieces, intelligence as intel, player
 from pygame.locals import *
 
 # ---------------------------
