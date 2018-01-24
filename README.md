@@ -10,11 +10,11 @@ A chess AI project made in my free time in order to experiment with different ga
 * Adjustable algorithm search tree depth
 * Toggle between player-controlled and AI controlled moves
 * Generated PGN for each game
+* Saves previously calculated moves in a move dictionary
 
 ### Future Plans
 * Add additional AI algorithms that the user can choose from
-* Optimize code
+* Optimize/clean up code
 * Implement Universal Chess Interface Support
 * Add a move timer
-* Save previously calculated best moves in a chess position dictionary
 * Enhance endgame moves

@@ -419,7 +419,7 @@ class AI_Depth_Selector(Element):
 		self.w_percent = 80
 		self.h_percent = 12
 		self.x_percent = 7.5
-		self.y_percent = 8
+		self.y_percent = 9
 		
 class Player_Select(Element):
 	def __init__(self, parent):
@@ -470,7 +470,7 @@ class Player_Select(Element):
 		self.w_percent = 80
 		self.h_percent = 12
 		self.x_percent = 7.5
-		self.y_percent = 21
+		self.y_percent = 22
 		
 		
 # End Settings --------------------------------------------------------------------------------		

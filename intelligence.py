@@ -1,4 +1,4 @@
-import pygame, pieces, random, copy, board, sys, chess, json
+import pygame, pieces, random, copy, board, sys, chess, json, os
 from pygame.locals import *
 
 
@@ -17,6 +17,8 @@ class Intelligence():
 		self.posit = posit # side of the board that this character is on, 1 = top, 2 = Bottom
 		
 		self.moves = []
+		
+		self.load_dict()
 		
 	def print_moves(self):
 		for move in self.moves:
@@ -66,8 +68,13 @@ class Intelligence():
 			my_board.last_move = my_board.last_move + "+"
 	# --------------------------------------------------------------------------------
 	def load_dict(self):
-		dict_file = open("move_dict.json", "r")
-		move_dict = json.loads(json.load(dict_file))
+		if not os.path.exists("move_dict.json"):
+			dict_file = open("move_dict.json", "w+")
+		else: dict_file = open("move_dict.json", "r")
+		
+		if os.stat("move_dict.json").st_size != 0:
+			move_dict = json.load(dict_file)
+		else: move_dict = dict()
 		dict_file.close()
 		
 		self.move_dict = move_dict
@@ -78,28 +85,35 @@ class Intelligence():
 		
 	def load_calculated_move(self):
 		# must be adjusted for the side of the board this player is on
-		board_str = self.my_board.gen_board_str(self.pos)
+		board_str = self.my_board.gen_board_str(self.posit)
 		if board_str not in self.move_dict:
+			print("here")
 			return False
 		else: best_move = self.move_dict[board_str]
 		
-		if self.pos == board.Board.TOP:
+		if self.posit == board.Board.TOP:
 			return self.flip_move(best_move)
 		
 		return best_move
 		
 	def save_move(self, move):
-		board_str = self.my_board.gen_board_str(self.pos)
+		board_str = self.my_board.gen_board_str(self.posit)
 		
-		if self.pos == board.Board.TOP:
+		if self.posit == board.Board.TOP:
 			saved_move = self.flip_move(move)
-		else: saved_move = move
+		else: saved_move = list(move)
 		
-		with open("move_dict.json", "rb+") as dict_file:
-			string = ", \\\"" + board_str + "\\\": " + str(saved_move) + "}"
-			binary = bytearray(string, "utf-8")
-			dict_file.seek(-2, 2)
-			dict_file.write(binary)
+		if os.stat("move_dict.json").st_size == 0:
+			with open("move_dict.json", "rb+") as dict_file:
+				string = "{\"" + board_str + "\": " + str(saved_move) + "}"
+				binary = bytearray(string, "utf-8")
+				dict_file.write(binary)
+		else:
+			with open("move_dict.json", "rb+") as dict_file:
+				string = ", \"" + board_str + "\": " + str(saved_move) + "}"
+				binary = bytearray(string, "utf-8")
+				dict_file.seek(-1, 2)
+				dict_file.write(binary)
 		
 		self.move_dict[board_str] = saved_move
 	# --------------------------------------------------------------------------------
@@ -421,7 +435,11 @@ class Intelligence():
 			return False
 		
 		# PICK an OPTIMAL MOVE
-		moves = self.decide(my_board)
+		precalc = self.load_calculated_move()
+		
+		if precalc == False:
+			moves = self.decide(my_board)
+		else: moves = [precalc]
 		print(self.color + "'s best moves: " + str(moves))
 		
 		if moves == "new_game":
@@ -432,6 +450,8 @@ class Intelligence():
 		i = int(random.uniform(0, len(moves) - 1))
 		
 		move = moves[i]
+		
+		self.save_move(move)
 		
 		self.gen_moves(my_board)
 		self.check_avoidance(my_board)
