@@ -75,6 +75,10 @@ class Piece(pygame.sprite.Sprite):
 	def is_opp(self, my_board, ra, fi):
 		return self.color != my_board.get_piece_color(ra, fi)
 		
+	def print_moves(self):
+		for move in self.moves:
+			print(board.move_to_str((self.ra, self.fi, move[0], move[1])))
+		
 	def move(self, my_board, ra, fi):
 		result = self.move_rule(my_board, ra, fi)
 		
@@ -257,7 +261,7 @@ class Pawn(Piece):
 					return True
 					
 		else: 
-			print("pawn moves: " + str(self.moves))
+			#print("pawn moves: " + str(self.moves))
 			return False
 			
 	def move_str(self, ra, fi):
@@ -555,7 +559,6 @@ class King(Piece):
 			
 
 	def move_rule(self, my_board, ra, fi):
-	
 		if ((ra, fi) in self.moves):
 			if ra == self.ra and fi - self.fi == -2:
 				return "lcastle"
@@ -566,7 +569,13 @@ class King(Piece):
 			else:
 				return True
 				
-		else: return False
+		else: 
+			print("Invalid Move Attempted")
+			print("My moves:")
+			self.print_moves()
+			print("Move attempted: " + board.move_to_str((self.ra, self.fi, ra ,fi)))
+			print(self.has_moved)
+			return False
 			
 		
 

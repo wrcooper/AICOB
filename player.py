@@ -65,9 +65,6 @@ class Player():
 		my_board.plyr2.gen_moves(virt_board)
 	# --------------------------------------------------------------------------------
 	def valid_move(self, my_board, ra1, fi1, ra2, fi2):
-		self.gen_moves(my_board)
-		self.check_avoidance(my_board)
-		
 		piece = my_board.get_piece(ra1, fi1)
 		
 		# Not only must piece be in self.moves, but may have to satisfy certain special rules

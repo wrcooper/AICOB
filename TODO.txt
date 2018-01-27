@@ -1,8 +1,0 @@
-TODO:
-- Allow player to enter their name
-- Allow player to get pgn
-- Have chess AI choose randomly from moves if there are multiple moves with same value
-
-Issues:
-- AI does not consider pawn promotion
-- Castling is based on left and right, not king or queenside

@@ -5,7 +5,7 @@
 # 11/5/2017
 # ------------------------------------------------------
 
-import pygame, time, os.path, math, board, game, UI, pieces, intelligence as intel, player
+import pygame, time, os.path, math, board, game, UI, pieces, intelligence as intel, player, configparser, sys
 from pygame.locals import *
 
 # ---------------------------
@@ -35,6 +35,47 @@ def print_sequence(sequence):
 		if i % 2 == 0:
 			print(str(int(i/2 + 1)) + ".", end=" ")
 		print(sequence[i], end=" ") 
+
+def get_player_name(screen, scrn_info):
+	if not os.path.exists("config.ini"):
+		enter_name = UI.Enter_Name(scrn_info)
+		name = enter_name.get_name(screen)
+		enter_name.kill()
+		
+		config = configparser.ConfigParser()
+		config["User_Settings"] = {"Player_Name": name}
+		with open("config.ini", "w+") as config_f:	
+			config.write(config_f)
+		return name
+	else:
+		config = configparser.ConfigParser()
+		config.read("config.ini")
+		name = config["User_Settings"]["Player_Name"]
+		return name
+	
+def get_input_paused(my_board, interface):
+	newRelease = False
+	
+	for mouseReleased in pygame.event.get(MOUSEBUTTONUP):
+		lastRelease = mouseReleased
+		newRelease = True
+		
+	if newRelease:
+		newRelease = False
+		interface.clicked(lastRelease)
+		interface.update_interface()
+		my_board.update()
+
+	for event in pygame.event.get():
+		if event.type == QUIT:
+				sys.exit()
+		elif event.type == KEYDOWN:
+			if event.key == K_ESCAPE:
+				sys.exit()
+			elif event.key == K_SPACE:
+				return False
+		
+	return True
 		
 def main():
 	# --------------------------------------------------------------------------------
@@ -57,7 +98,7 @@ def main():
 		loaded_images.append(load_image(image))
 	pieces.Piece.images = loaded_images
 	
-	ui_images = ["left_arrow_button.png", "right_arrow_button.png", "toggle_button.png"]
+	ui_images = ["left_arrow_button.png", "right_arrow_button.png", "toggle_button.png", "reset_button.png", "change_button.png"]
 	
 	loaded_ui_images = []
 	for image in ui_images:
@@ -79,10 +120,15 @@ def main():
 	board.Highlight_Current.containers = highlight_current
 	UI.UI.containers = ui
 	UI.Element.containers = ui
+	UI.Enter_Name.containers = ui
 	
 	# --------------------------------------------------------------------------------
 	# decorate the game window
 	pygame.display.set_caption('Artificially Intelligent Chess Oriented Bot')
+	
+	# --------------------------------------------------------------------------------
+	# get player name
+	name = get_player_name(SCREEN, scrn_info)
 
 	# --------------------------------------------------------------------------------
 	# init board, draw the background
@@ -95,10 +141,12 @@ def main():
 	my_clock = pygame.time.Clock()
 	my_game = game.Game(plyr1_color)
 	my_game.set_board(my_board)
+	my_board.set_game(my_game)
 
 	# --------------------------------------------------------------------------------
 	# initialize UI
 	interface = UI.UI(scrn_info, my_game, load_image("wood2.jpg"))
+	interface.player_name = name
 	interface.init_game_interface()
 
 	# --------------------------------------------------------------------------------
@@ -122,25 +170,36 @@ def main():
 	newClick = False
 	newRelease = False
 	piece_held = False
+	pause = False
 	
 	ra1 = 0
 	fi1 = 0
 		
-	my_board.plyr1.gen_moves(my_board)
-	my_board.plyr1.check_avoidance(my_board)
+	my_board.gen_plyr1_moves()
 
 	while(True):
 		
 		# IF BLACK'S MOVE, MAKE MOVE
 		if my_game.current_move == "bl":
 			my_board.plyr2.move(my_board, my_game)
-			my_board.plyr1.gen_moves(my_board)
+			my_board.gen_plyr1_moves()
 			interface.update_interface()
+			my_board.update()
+					
+		while(my_game.paused):
+			my_clock.tick(60)
+			my_game.paused = get_input_paused(my_board, interface)
+			
+			if my_game.paused == False:				
+				interface.update_interface()
+				my_board.update()
+				pygame.event.clear()
 		
 		if my_game.current_move == "wh" and my_game.player1 == "Computer":
 			my_board.plyr1.move(my_board, my_game)
-			my_board.plyr2.gen_moves(my_board)
+			my_board.gen_plyr2_moves()
 			interface.update_interface()
+			my_board.update()
 		
 		# LIMIT FRAMERATE to 60
 		my_clock.tick(60)
@@ -188,9 +247,26 @@ def main():
 			
 		# IF ESC PRESSED, QUIT PROGRAM
 		for event in pygame.event.get():
-			if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
-					print_sequence(my_game.sequence)
-					return
+			if event.type == QUIT:
+					sys.exit()
+			elif event.type == KEYDOWN:
+				if event.key == K_ESCAPE:
+					sys.exit()
+				elif event.key == K_SPACE:
+					my_game.paused = True
+					interface.update_interface()
+					my_board.update()
+					pygame.event.clear()
+					
+		while(my_game.paused):
+			my_clock.tick(60)
+			my_game.paused = get_input_paused(my_board, interface)
+			
+			if my_game.paused == False:				
+				interface.update_interface()
+				my_board.update()
+				pygame.event.clear()
+		
 		keystate = pygame.key.get_pressed()
 		
 		# UPDATE AND DRAW SCREEN

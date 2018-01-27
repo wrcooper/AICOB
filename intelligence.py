@@ -1,4 +1,4 @@
-import pygame, pieces, random, copy, board, sys, chess, json, os
+import pygame, pieces, random, copy, board, sys, aicob, json, os, time, game
 from pygame.locals import *
 
 
@@ -7,7 +7,6 @@ class Intelligence():
 	def __init__(self, my_board, color, posit):
 		self.my_board = my_board
 		self.color = color
-		
 		
 		if posit == board.Board.BOT:
 			self.opp = my_board.plyr2
@@ -18,7 +17,7 @@ class Intelligence():
 		
 		self.moves = []
 		
-		self.load_dict()
+		self.load_dict(game.DEFAULT_DEPTH)
 		
 	def print_moves(self):
 		for move in self.moves:
@@ -34,6 +33,19 @@ class Intelligence():
 	def set_opp(self, opp):
 		self.opp = opp
 		
+	def get_key_pressed(self, my_board):
+		for event in pygame.event.get():
+			if event.type == QUIT:
+					sys.exit()
+			elif event.type == KEYDOWN:
+				if event.key == K_ESCAPE:
+					sys.exit()
+				elif event.key == K_SPACE:
+					self.my_board.game.paused = not self.my_board.game.paused
+					my_board.interface.update_interface()
+					my_board.update()
+					pygame.event.clear()
+					
 	# --------------------------------------------------------------------------------
 	# move a piece from a starting position and an ending position 
 	def ai_move(self, my_board, ra1, fi1, ra2, fi2):
@@ -67,12 +79,14 @@ class Intelligence():
 		if my_board.is_check(self.opp.color):
 			my_board.last_move = my_board.last_move + "+"
 	# --------------------------------------------------------------------------------
-	def load_dict(self):
-		if not os.path.exists("move_dict.json"):
-			dict_file = open("move_dict.json", "w+")
-		else: dict_file = open("move_dict.json", "r")
+	def load_dict(self, depth):
+		file_str = "move_dicts/move_dict" + str(depth) + ".json"
+	
+		if not os.path.exists(file_str):
+			dict_file = open(file_str, "w+")
+		else: dict_file = open(file_str, "r")
 		
-		if os.stat("move_dict.json").st_size != 0:
+		if os.stat(file_str).st_size != 0:
 			move_dict = json.load(dict_file)
 		else: move_dict = dict()
 		dict_file.close()
@@ -87,9 +101,14 @@ class Intelligence():
 		# must be adjusted for the side of the board this player is on
 		board_str = self.my_board.gen_board_str(self.posit)
 		if board_str not in self.move_dict:
-			print("here")
 			return False
-		else: best_move = self.move_dict[board_str]
+		else:
+			if self.wait != 0:
+				wait = int(self.wait/0.1)
+				for i in range(wait):
+					self.get_click(self.my_board.interface, self.my_board.screen)
+					time.sleep(0.1)
+			best_move = self.move_dict[board_str]
 		
 		if self.posit == board.Board.TOP:
 			return self.flip_move(best_move)
@@ -103,13 +122,19 @@ class Intelligence():
 			saved_move = self.flip_move(move)
 		else: saved_move = list(move)
 		
-		if os.stat("move_dict.json").st_size == 0:
-			with open("move_dict.json", "rb+") as dict_file:
+		file_str = "move_dicts/move_dict" + str(self.depth) + ".json"
+		
+		if not os.path.exists(file_str):
+			dict_file = open(file_str, "w+")
+			dict_file.close()
+			
+		if os.stat(file_str).st_size == 0:
+			with open(file_str, "rb+") as dict_file:
 				string = "{\"" + board_str + "\": " + str(saved_move) + "}"
 				binary = bytearray(string, "utf-8")
 				dict_file.write(binary)
 		else:
-			with open("move_dict.json", "rb+") as dict_file:
+			with open(file_str, "rb+") as dict_file:
 				string = ", \"" + board_str + "\": " + str(saved_move) + "}"
 				binary = bytearray(string, "utf-8")
 				dict_file.seek(-1, 2)
@@ -237,13 +262,14 @@ class Intelligence():
 			if result == "new_game":
 				return "new_game"
 		
-		for event in pygame.event.get():
-			if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
-				sys.exit()
-				return
-	
+		self.get_key_pressed(self.my_board)
+		
 	def update_depth(self, my_game):
 		self.depth = my_game.depth
+		self.load_dict(self.depth)
+		
+	def update_wait(self, my_game):
+		self.wait = my_game.ai_wait
 		
 	# --------------------------------------------------------------------------------
 	def decide(self, my_board):
@@ -256,7 +282,7 @@ class Intelligence():
 		
 		self.best_move = [] 
 		
-		print(self.color + " MOVING ! ------------------------------------------------------------------\n")
+		#print(self.color + " MOVING ! ------------------------------------------------------------------\n")
 		decision = self.minimax(virt_board, self.depth, float('-inf'), float('inf'), True, interface, scrn)
 		if decision == "new_game":
 			return decision
@@ -272,9 +298,9 @@ class Intelligence():
 			# GENERATE MOVES, RETURN SCORE of the current state of the BOARD
 			#self.gen_moves(my_board)
 			#self.check_avoidance(my_board)
-			print(self.indent_depth(depth) + "END REACHED ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+			#print(self.indent_depth(depth) + "END REACHED ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 			result = self.score_board(my_board)
-			print(self.indent_depth(depth) + "value: " + str(result))
+			#print(self.indent_depth(depth) + "value: " + str(result))
 			return result
 			
 			
@@ -291,7 +317,7 @@ class Intelligence():
 					
 			# TRY EACH MOVE in a NEW BOARD
 			for move in self.moves:
-				print(self.indent_depth(depth) + "MY MOVE: depth = " + str(depth) + "----------------------------------------------------------------------------------")
+				#print(self.indent_depth(depth) + "MY MOVE: depth = " + str(depth) + "----------------------------------------------------------------------------------")
 				
 				ra1 = move[0]
 				fi1 = move[1]
@@ -299,15 +325,14 @@ class Intelligence():
 				fi2 = move[3]
 				
 				moved_piece = my_board.get_piece(ra1, fi1)
-				
 				moved_piece.gen_moves(my_board)
 				
 				moved_piece.move(my_board, ra2, fi2)
 				
-				print(self.indent_depth(depth) + str(moved_piece))
-				print(self.indent_depth(depth) + board.move_to_str(move))
+				#print(self.indent_depth(depth) + str(moved_piece))
+				#print(self.indent_depth(depth) + board.move_to_str(move))
 				
-				my_board.print_board(self.indent_depth(depth))
+				#my_board.print_board(self.indent_depth(depth))
 				
 				# make move for opponent
 				result = self.minimax(my_board, depth-1, alpha, beta, False, interface, scrn)
@@ -316,7 +341,6 @@ class Intelligence():
 					return "new_game"
 				
 				value = max(best_value, result)
-				
 				alpha = max(value, alpha)
 				
 				if value >= best_value: 
@@ -331,7 +355,7 @@ class Intelligence():
 				if beta <= alpha:
 					break
 					
-			print(self.indent_depth(depth) + "Best value for depth" + str(depth) + " = " + str(best_value))
+			#print(self.indent_depth(depth) + "Best value for depth" + str(depth) + " = " + str(best_value))
 			return best_value
 			
 		else: # opponent's turn
@@ -347,7 +371,7 @@ class Intelligence():
 			best_value = float('inf')
 			
 			for move in self.opp.moves:
-				print(self.indent_depth(depth) + "OPPONENT MOVE: depth = " + str(depth) + "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
+				#print(self.indent_depth(depth) + "OPPONENT MOVE: depth = " + str(depth) + "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||")
 				
 				
 				ra1 = move[0]
@@ -355,18 +379,15 @@ class Intelligence():
 				ra2 = move[2]
 				fi2 = move[3]
 				
-				
 				moved_piece = my_board.get_piece(ra1, fi1)
 				
-				
 				moved_piece.gen_moves(my_board)
-				
 				moved_piece.move(my_board, ra2, fi2)
 				
-				print(self.indent_depth(depth) + str(moved_piece))
-				print(self.indent_depth(depth) + board.move_to_str(move))
+				#print(self.indent_depth(depth) + str(moved_piece))
+				#print(self.indent_depth(depth) + board.move_to_str(move))
 				
-				my_board.print_board(self.indent_depth(depth))
+				#my_board.print_board(self.indent_depth(depth))
 				
 				result = self.minimax(my_board, depth-1, alpha, beta, True, interface, scrn)
 				
@@ -374,7 +395,6 @@ class Intelligence():
 					return "new_game"
 				
 				value = min(best_value, result)
-				
 				beta = min(value, beta)
 				
 				if value < best_value: best_value = value
@@ -384,8 +404,7 @@ class Intelligence():
 				if beta <= alpha:
 					break
 				
-				
-			print("Best value for depth" + str(depth) + " = " + str(best_value))
+			#print("Best value for depth" + str(depth) + " = " + str(best_value))
 			return best_value
 			
 			
@@ -426,8 +445,13 @@ class Intelligence():
 	# --------------------------------------------------------------------------------
 	# CHOOSE an OPTIMAL MOVE and MAKE IT
 	def move(self, my_board, my_game):
-		print("Is AI checked? " + str(my_board.is_check(self.color)))
+		#print("Is AI checked? " + str(my_board.is_check(self.color)))
 		self.update_depth(my_game)
+		self.update_wait(my_game)
+			
+		result = self.get_click(my_board.interface, my_board.screen)
+		if result == "new_game":
+			return "new_game"
 	
 		# UPDATE CHECKMATE and DRAW
 		my_board.update_check(my_board.plyr1, my_board.plyr2)
@@ -440,7 +464,7 @@ class Intelligence():
 		if precalc == False:
 			moves = self.decide(my_board)
 		else: moves = [precalc]
-		print(self.color + "'s best moves: " + str(moves))
+		#print(self.color + "'s best moves: " + str(moves))
 		
 		if moves == "new_game":
 			return False

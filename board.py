@@ -1,4 +1,4 @@
-import pygame, math, inspect, chess, game, pieces, time
+import pygame, math, inspect, aicob, game, pieces, time
 from pygame.locals import *
 
 class Board():
@@ -59,6 +59,9 @@ class Board():
 					else: board_str += "x" 
 		
 		return board_str
+		
+	def set_game(self, my_game):
+		self.game = my_game
 		
 	def set_players(self, plyr1, plyr2):
 		self.plyr1 = plyr1
@@ -277,6 +280,7 @@ class Board():
 		if len(plyr.moves) == 0 and self.is_check(plyr.color):
 			self.checkmate = plyr.color
 			return True
+			
 		elif len(plyr.moves) == 0:
 			self.checkmate = "dr"
 			self.game_draw = True
@@ -296,8 +300,8 @@ class Board():
 		for ra in range(1, 9):
 			for fi in range(1, 9):
 				if isinstance(self.board[ra][fi], pieces.King):
-					piece = self.board[ra][fi]
-					color = piece.color
+					king = self.board[ra][fi]
+					color = king.color
 					
 					if self.plyr1.color == "wh":
 						white = plyr
@@ -336,7 +340,6 @@ class Board():
 					return True
 			else:
 					return False
-
 					
 	# --------------------------------------------------------------------------------
 	def make_hist(self):
@@ -391,11 +394,11 @@ class Board():
 	def in_moves(self, ra1, fi1, ra2, fi2):
 		return ((ra1, fi1, ra2, fi2) in self.moves)
 	# --------------------------------------------------------------------------------	
-	def gen_moves(self):
-		self.plyr1.gen_player_moves(self)
+	def gen_plyr1_moves(self):
+		self.plyr1.gen_moves(self)
 		self.plyr1.check_avoidance(self)
 	
-	def gen_opp_moves(self):
+	def gen_plyr2_moves(self):
 		self.plyr2.gen_moves(self)
 		self.plyr2.check_avoidance(self)
 		
@@ -413,7 +416,7 @@ class Board():
 		pygame.mouse.get_pos()[1] - (self.space_height / 2), self.space_height, self.space_height)
 		
 		# draw highlighted spaces
-		self.next_highlight = self.highlight(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1])
+		self.next_highlight = self.highlight(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1], piece)
 		self.current_highlight = self.highlight_current(ra, fi)
 
 	def piece_released(self, my_game, plyr, opp, ra1, fi1, ra2, fi2):
@@ -439,7 +442,9 @@ class Board():
 			if self.is_check(opp.color):
 				self.last_move = self.last_move + "+"
 				
-			self.gen_opp_moves()
+			self.gen_plyr1_moves()
+			self.gen_plyr2_moves()
+			
 			my_game.next_move()
 				
 		else:
@@ -459,7 +464,7 @@ class Board():
 		
 
 	# --------------------------------------------------------------------------------
-	def highlight(self, x, y):
+	def highlight(self, x, y, piece):
 		space = self.coord_to_space(x, y)
 		ra = space[0]
 		fi = space[1]
@@ -467,7 +472,11 @@ class Board():
 		if not valid_space(ra, fi):
 			return False
 		
-		highlight = Highlight(ra, fi, self)
+		if ((ra, fi) in piece.moves and (piece.ra, piece.fi, ra, fi) in self.plyr1.moves) or (ra, fi) == (piece.ra, piece.fi) :
+			highlight = Highlight(ra, fi, self, True)
+			return highlight
+
+		highlight = Highlight(ra, fi, self, False)
 		return highlight
 	
 	def highlight_current(self, ra, fi):
@@ -540,8 +549,6 @@ def valid_space(ra, fi):
 class Virtual_Board(Board):
 	def __init__(self):
 		self.board = [[0 for x in range(9)] for y in range(9)]
-		self.wh_check = False
-		self.bl_check = False
 		self.space_height = 0
 		self.edge_dist = 0
 		
@@ -562,6 +569,7 @@ class Virtual_Board(Board):
 			new_piece = pieces.King(ra, fi, color)
 		elif shorthand == "Q":
 			new_piece = pieces.Queen(ra, fi, color)
+			
 		new_piece.kill()
 		new_piece.moves = list(piece.moves)
 		new_piece.has_moved = piece.has_moved
@@ -569,6 +577,9 @@ class Virtual_Board(Board):
 		self.board[ra][fi] = new_piece
 		
 	def copy_board(self, my_board):
+		self.wh_check = my_board.wh_check
+		self.bl_check = my_board.bl_check
+	
 		for ra in range(1, 9):
 			for fi in range(1, 9):
 				piece = my_board.get_piece(ra, fi)
@@ -586,13 +597,14 @@ class Virtual_Board(Board):
 		
 # SPRITE CLASSES FOR HIGHLIGHTING SPACES
 class Highlight(pygame.sprite.Sprite):
-	def __init__(self, ra, fi, board):
+	def __init__(self, ra, fi, board, valid):
 		pygame.sprite.Sprite.__init__(self, self.containers)
 		rect = board.space_to_rect(ra, fi)
 		self.rect = rect
 		s = pygame.Surface((rect.width, rect.height))
 		s.set_alpha(100)
-		s.fill((255, 180, 60))
+		if valid: s.fill((255, 180, 60))
+		else: s.fill((255, 60, 10))
 		self.image = s
 	
 class Highlight_Current(pygame.sprite.Sprite):
