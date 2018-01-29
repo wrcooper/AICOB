@@ -226,7 +226,10 @@ class Pawn(Piece):
 		elif result == True:
 			Piece.append_move_hist(self, my_board, ra, fi)
 			
-			self.take_piece(my_board, ra, fi)
+			take = self.take_piece(my_board, ra, fi)
+			
+			if take: my_board.last_move = self.take_to_str(ra, fi)
+			else: my_board.last_move = board.space_to_str(ra, fi)
 		
 			my_board.set_space(self.ra, self.fi, 0) 
 			my_board.set_space(ra, fi, self)
@@ -236,7 +239,6 @@ class Pawn(Piece):
 			
 			self.set_pos(my_board, ra, fi)
 			
-			my_board.last_move = board.space_to_str(ra,fi)
 			return True
 		else: 
 			return False

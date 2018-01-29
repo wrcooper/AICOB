@@ -719,7 +719,7 @@ class PGN(Element):
 		top_border = 5
 		
 		for word in words:
-			if font.size(line + word)[0] > self.width - 5:
+			if font.size(line + word)[0] > self.width - 15:
 				s = font.render(line, True, (0, 0, 0))
 				self.image.blit(s, (left_border + 5, top_border + 5 + (i * 25) ))
 				line = ""
