@@ -78,7 +78,7 @@ Navigate to your desired directory and enter the command:
 	$ pip install -r requirements.txt
 	
 ##### 4. Run the program!
-	# py aicob.py
+	$ py aicob.py
 	
 ##### 5. To leave the environment when finished
 	$ deactivate
