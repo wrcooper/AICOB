@@ -22,31 +22,7 @@ Send comments/bugs to wrcooper3000@gmail.com
 
 ##
 
-###### Note: A virtual environment is recommended in case of the unlikely event that the requirement packages installed conflict with programs on your computer. 
-If this does not matter to you, then the requirements can be installed to directly to your computer with the steps listed under "Without a virtual environment".
-
 ### On macOS/Linux:
-	
-##### 1. Download the Project
-Navigate to your desired directory and enter the command:
-
-	$ clone https://github.com/wrcooper/AICOB.git
-	$ cd AICOB
-	
-##### 2. Create a virtual environment
-	$ python3 -m virtualenv env
-	
-##### 3. Activate the virtual environment and install dependencies
-	$ source ./env/bin/activate
-	$ pip install -r requirements.txt
-	
-##### 4. Run the program!
-	$ python3 aicob.py
-	
-##### 5. To leave the environment when finished
-	$ deactivate
-
-#### Without a virtual environment:
 
 ##### 1. Download the Project
 Navigate to your desired directory and enter the command:
@@ -63,28 +39,6 @@ Navigate to your desired directory and enter the command:
 ##	
 	
 ### On Windows:
-	
-##### 1. Download the Project
-Navigate to your desired directory and enter the command:
-
-	$ clone https://github.com/wrcooper/AICOB.git
-	$ cd AICOB
-	
-##### 2. Create a virtual environment
-	$ py -m virtualenv env
-	
-##### 3. Activate the virtual environment and install dependencies
-	$ source ./env/Scripts/activate
-	$ pip install -r requirements.txt
-	
-##### 4. Run the program!
-	$ py aicob.py
-	
-##### 5. To leave the environment when finished
-	$ deactivate
-
-
-#### Without a virtual environment:
 
 ##### 1. Download the Project
 Navigate to your desired directory and enter the command:
