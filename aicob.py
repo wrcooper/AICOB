@@ -41,6 +41,7 @@ def get_player_name(screen, scrn_info):
 		enter_name = UI.Enter_Name(scrn_info)
 		name = enter_name.get_name(screen)
 		enter_name.kill()
+		screen.fill((0,0,0))
 		
 		config = configparser.ConfigParser()
 		config["User_Settings"] = {"Player_Name": name}

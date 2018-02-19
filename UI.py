@@ -132,24 +132,35 @@ class Element(pygame.sprite.Sprite):
 	def __init__(self, parent):
 		pygame.sprite.Sprite.__init__(self, self.containers)
 		
+		self.x = 0;
+		self.y = 0;
+		
+		self.parent = parent
+		
 		centered = False
 		self.dimensions()
 		self.centered()
 		self.set_border()
 		
-		self.parent = parent
 		
-		self.width = int((self.w_percent * parent.rect_w) / 100)
-		self.height = int((self.h_percent * parent.screen_h) / 100)
+		if (self.w_percent != False):
+			self.width = int((self.w_percent * parent.rect_w) / 100)
+			
+		if (self.h_percent != False):
+			self.height = int((self.h_percent * parent.screen_h) / 100)
 		
 		self.stroke = 10
 		
 		if (self.centered):	
 			x = parent.start_x + int((parent.rect_w - self.width)/2)
-		else:
+		elif (self.x_percent != False):
 			x = (self.x_percent * parent.rect_w)/100 + parent.start_x + parent.left_button_border
+		else:
+			x = self.x + parent.start_x + parent.left_button_border
 			
-		y = parent.top_button_border + (self.y_percent * parent.screen_h)/100
+		if (self.y_percent != False):
+			y = parent.top_button_border + (self.y_percent * parent.screen_h)/100
+		else: y = self.y + parent.top_button_border
 		
 		self.rect = pygame.Rect(x, y, self.width, self.height)
 		
@@ -422,12 +433,22 @@ class Settings_Page(Element):
 		text_size = font.size(text)
 		self.image.blit(text_surf, (self.rect.w - text_size[0] - 30, 30))
 		
+		back_button = Back_Button(parent)
+		parent.back_button = back_button
 		
 		depth_selector = AI_Depth_Selector(parent)
-		wait_selector = AI_Wait_Selector(parent)
-		back_button = Back_Button(parent)
+		parent.depth_selector = depth_selector
+		
 		player_select = Player_Select(parent)
+		parent.player_select = player_select
+		
+		wait_selector = AI_Wait_Selector(parent)
+		parent.wait_selector = wait_selector
+		
 		user_config = User_Config(parent)
+		parent.user_config = user_config
+		
+		
 		
 		parent.elements.append(depth_selector)
 		parent.elements.append(wait_selector)
@@ -456,18 +477,20 @@ class Back_Button(Element):
 		self.parent.main_menu = True
 		
 	def dimensions(self):
-		self.w_percent = 15
+		self.w_percent = False
 		self.h_percent = 4
 		self.x_percent = 5
 		self.y_percent = 2.5
+		
+		self.width = 90
 		
 class AI_Depth_Selector(Element):
 	def __init__(self, parent):
 		Element.__init__(self, parent)
 		font = UI.get_font(50)
-		smallfont = UI.get_font(20)
+		smallfont = UI.get_font(22)
 		text = "AI Move Algorithm Depth: " 
-		note = "(default: 3, any more than 3 may result in ridiculous processing time!)"
+		note = "(default: 3, higher depth = more processing)"
 		title_s = font.render(text, True, (0,0,0))
 		
 		size = font.size(text)
@@ -522,17 +545,19 @@ class AI_Depth_Selector(Element):
 	
 	def dimensions(self):
 		self.w_percent = 80
-		self.h_percent = 12
+		self.h_percent = False
 		self.x_percent = 7.5
 		self.y_percent = 9
+		
+		self.height = 150
 		
 class AI_Wait_Selector(Element):
 	def __init__(self, parent):
 		Element.__init__(self, parent)
 		font = UI.get_font(50)
-		smallfont = UI.get_font(20)
+		smallfont = UI.get_font(22)
 		text = "AI Wait Time (sec): " 
-		note = "(Wait time during precalculated AI moves; makes them easier to follow)"
+		note = "(Wait time for precalculated AI moves so a human could follow them)"
 		title_s = font.render(text, True, (0,0,0))
 		
 		size = font.size(text)
@@ -586,9 +611,12 @@ class AI_Wait_Selector(Element):
 	
 	def dimensions(self):
 		self.w_percent = 80
-		self.h_percent = 12
+		self.h_percent = False
 		self.x_percent = 7.5
-		self.y_percent = 35
+		self.y_percent = False
+		
+		self.y = self.parent.player_select.rect.y + self.parent.player_select.rect.height - 20
+		self.height = 150
 		
 class Player_Select(Element):
 	def __init__(self, parent):
@@ -637,9 +665,12 @@ class Player_Select(Element):
 		
 	def dimensions(self):
 		self.w_percent = 80
-		self.h_percent = 12
+		self.h_percent = False
 		self.x_percent = 7.5
-		self.y_percent = 22
+		self.y_percent = False
+		
+		self.height = 140
+		self.y =  self.parent.depth_selector.rect.y + self.parent.depth_selector.rect.height - 20
 		
 		
 class User_Config(Element):
@@ -699,9 +730,12 @@ class User_Config(Element):
 		
 	def dimensions(self):
 		self.w_percent = 80
-		self.h_percent = 12
+		self.h_percent = False
 		self.x_percent = 7.5
-		self.y_percent = 48
+		self.y_percent = False
+		
+		self.y = self.parent.wait_selector.rect.y + self.parent.wait_selector.rect.height - 20
+		self.height = 150
 		
 		
 # End Settings --------------------------------------------------------------------------------		
