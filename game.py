@@ -1,4 +1,5 @@
-import pygame, board, pieces, player, intelligence as intel, os, shutil, aicob, UI, configparser
+from shared_imports import *
+import board, pieces, player, intelligence as intel, aicob, UI
 
 DEFAULT_DEPTH = 3
 
@@ -128,4 +129,11 @@ class Game():
 			
 		with open("pgn.txt", "w+") as pgn_f:
 			pgn_f.write(self.pgn)
-		
+	
+	
+	def print_sequence(sequence):
+		for i in range(len(sequence)):
+			if i % 2 == 0:
+				print(str(int(i/2 + 1)) + ".", end=" ")
+			print(sequence[i], end=" ") 
+
