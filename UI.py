@@ -490,7 +490,7 @@ class AI_Depth_Selector(Element):
 		font = UI.get_font(50)
 		smallfont = UI.get_font(22)
 		text = "AI Move Algorithm Depth: " 
-		note = "(default: 3, higher depth = more processing)"
+		note = "(default: 3, higher depth = longer processing)"
 		title_s = font.render(text, True, (0,0,0))
 		
 		size = font.size(text)
@@ -557,7 +557,7 @@ class AI_Wait_Selector(Element):
 		font = UI.get_font(50)
 		smallfont = UI.get_font(22)
 		text = "AI Wait Time (sec): " 
-		note = "(Wait time for precalculated AI moves so a human could follow them)"
+		note = "Wait time between precalculated AI moves"
 		title_s = font.render(text, True, (0,0,0))
 		
 		size = font.size(text)

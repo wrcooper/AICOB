@@ -11,7 +11,7 @@ class Game():
 		self.current_move = "wh"
 		self.pgn = ""
 		self.depth = DEFAULT_DEPTH
-		self.ai_wait = 0.5
+		self.ai_wait = 0.0
 		self.paused = False
 		
 		self.player2 = "Computer"

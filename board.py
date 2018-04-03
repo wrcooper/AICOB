@@ -209,24 +209,7 @@ class Board():
 				self.make_piece(init_layout[row-1][col-1], row, col, color2)
 			for row in range(7, 9):
 				self.make_piece(init_layout[row-1][col-1], row, col, color1)
-		'''
-		order = [color1, color2]
-		row2 = [7, 2]
-		row1 = [8, 1]
-
-		
-		for i in range(1, -1, -1):
-			for fi in range(1, 9):
-				self.make_piece("", row2[i], fi, order[i])
-			self.make_piece("R", row1[i], 1, order[i])
-			self.make_piece("R", row1[i], 8, order[i])
-			self.make_piece("N", row1[i], 2, order[i])
-			self.make_piece("N", row1[i], 7, order[i])
-			self.make_piece("B", row1[i], 3, order[i])
-			self.make_piece("B", row1[i], 6, order[i])
-			self.make_piece("K", row1[i], 5, order[i])
-			self.make_piece("Q", row1[i], 4, order[i])
-		'''
+				
 	# --------------------------------------------------------------------------------
 	# INITIALIZE any PIECE
 	def make_piece(self, piece, ra, fi, color):
