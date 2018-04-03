@@ -192,11 +192,29 @@ class Board():
 			color2 = "bl"
 		else:
 			color2 = "wh"
+			
+		init_layout = [
+		["R", "N", "B", "K", "Q", "B", "N", "R"],
+		["",  "",  "",  "",  "",  "",  "",  ""],
+		[0,   0,   0,   0,   0,   0,   0,   0],
+		[0,   0,   0,   0,   0,   0,   0,   0],
+		[0,   0,   0,   0,   0,   0,   0,   0],
+		[0,   0,   0,   0,   0,   0,   0,   0],
+		["",  "",  "",  "",  "",  "",  "",  ""],
+		["R", "N", "B", "K", "Q", "B", "N", "R"]
+		]
 		
+		for col in range(1, 9):
+			for row in range(1, 3):
+				self.make_piece(init_layout[row-1][col-1], row, col, color2)
+			for row in range(7, 9):
+				self.make_piece(init_layout[row-1][col-1], row, col, color1)
+		'''
 		order = [color1, color2]
 		row2 = [7, 2]
 		row1 = [8, 1]
 
+		
 		for i in range(1, -1, -1):
 			for fi in range(1, 9):
 				self.make_piece("", row2[i], fi, order[i])
@@ -208,7 +226,7 @@ class Board():
 			self.make_piece("B", row1[i], 6, order[i])
 			self.make_piece("K", row1[i], 5, order[i])
 			self.make_piece("Q", row1[i], 4, order[i])
-			
+		'''
 	# --------------------------------------------------------------------------------
 	# INITIALIZE any PIECE
 	def make_piece(self, piece, ra, fi, color):
@@ -232,6 +250,9 @@ class Board():
 			
 		elif piece == "Q":
 			piece = pieces.Queen(ra, fi, color)
+			
+		elif piece == 0:
+			return
 			
 		piece.set_rect(x, y, self.space_height)
 		piece.set_image(self.space_height)
