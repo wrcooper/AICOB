@@ -1,11 +1,11 @@
 # ------------------------------------------------------
-# chess.py
-# A chess game with built-in opponent AI and chatbot companion
+# aicob.py
+# A chess game with built-in opponent AI
 # Winston Cooper
 # 11/5/2017
 # ------------------------------------------------------
-
-import pygame, time, os.path, math, board, game, UI, pieces, intelligence as intel, player, configparser, sys
+from shared_imports import *
+import board, game, UI, pieces, intelligence as intel, player 
 from pygame.locals import *
 
 # ---------------------------
@@ -15,6 +15,12 @@ plyr1_color = "wh"
 
 # ---------------------------
 # load images
+def load_images(*files):
+	imgs = []
+	for file in files:
+		imgs.append(load_image(file))
+	return imgs
+
 def load_image(file):
 	file = os.path.join(main_dir, 'data', file)
 	try:
@@ -23,30 +29,23 @@ def load_image(file):
 		raise SystemExit('Could not load image "%s" %s'%(file, pygame.get_error()))
 	return surface.convert_alpha()
 
-def load_images(*files):
-	imgs = []
-	for file in files:
-		imgs.append(load_image(file))
-	return imgs
 	
 # ---------------------------
-def print_sequence(sequence):
-	for i in range(len(sequence)):
-		if i % 2 == 0:
-			print(str(int(i/2 + 1)) + ".", end=" ")
-		print(sequence[i], end=" ") 
-
 def get_player_name(screen, scrn_info):
+	# create config file if nonexistent
 	if not os.path.exists("config.ini"):
 		enter_name = UI.Enter_Name(scrn_info)
 		name = enter_name.get_name(screen)
 		enter_name.kill()
+		screen.fill((0,0,0))
 		
 		config = configparser.ConfigParser()
 		config["User_Settings"] = {"Player_Name": name}
 		with open("config.ini", "w+") as config_f:	
 			config.write(config_f)
 		return name
+		
+	# else read config file
 	else:
 		config = configparser.ConfigParser()
 		config.read("config.ini")
@@ -163,7 +162,7 @@ def main():
 	
 	my_board.set_interface(interface, ui)
 	
-	# ORDER MATTERS
+	# set groups, groups rendered in order
 	my_board.set_groups(highlight, highlight_current, all, ui)
 
 
@@ -245,7 +244,7 @@ def main():
 					
 			interface.update_interface()
 			
-		# IF ESC PRESSED, QUIT PROGRAM
+		# event handler
 		for event in pygame.event.get():
 			if event.type == QUIT:
 					sys.exit()
